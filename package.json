@@ -4,7 +4,7 @@
   "description": "Standalone core productivity tools for pi: apply_patch, repo_map, read_block, question, questionnaire, fetch, Sourcegraph, and built-in search activation. (todo split out into @tintinweb/pi-tasks.)",
   "repository": {
     "type": "git",
-    "url": "https://github.com/capyup/pi-basic-tools.git"
+    "url": "git+https://github.com/capyup/pi-basic-tools.git"
   },
   "author": "capyup",
   "license": "MIT",
