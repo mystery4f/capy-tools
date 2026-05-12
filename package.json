@@ -1,19 +1,31 @@
 {
-  "name": "pi-basic-tools",
+  "name": "@capyup/pi-basic-tools",
   "version": "0.2.0",
   "description": "Standalone core productivity tools for pi: apply_patch, repo_map, read_block, question, questionnaire, fetch, Sourcegraph, and built-in search activation. (todo split out into @tintinweb/pi-tasks.)",
   "repository": {
     "type": "git",
     "url": "https://github.com/capyup/pi-basic-tools.git"
   },
+  "author": "capyup",
   "license": "MIT",
   "type": "module",
   "keywords": [
     "pi-package",
+    "pi",
     "pi-extension",
     "editing",
     "search"
   ],
+  "files": [
+    "extensions/",
+    "vendor/",
+    "docs/",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "test": "bun test",
     "test:build": "bun build extensions/apply-patch.ts extensions/fetch.ts extensions/enable-builtin-search.ts extensions/repo-map.ts extensions/read-block.ts extensions/question.ts extensions/questionnaire.ts extensions/sourcegraph.ts --target=node --external @earendil-works/pi-coding-agent --external @earendil-works/pi-ai --external @earendil-works/pi-tui --external @sinclair/typebox --outdir /tmp/pi-basic-tools-build",

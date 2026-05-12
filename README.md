@@ -53,7 +53,7 @@ Pi core packages have moved from `@mariozechner/*` to `@earendil-works/*`. This 
 Install the pi package:
 
 ```bash
-pi install git:github.com/capyup/pi-basic-tools
+pi install npm:@capyup/pi-basic-tools
 ```
 
 Install `pipx` if it is not already available:
@@ -105,7 +105,7 @@ Test coverage includes `apply_patch`, `repo_map`, `read_block`, `question`, `que
 Update this package inside pi:
 
 ```bash
-pi update git:github.com/capyup/pi-basic-tools
+pi update npm:@capyup/pi-basic-tools
 ```
 
 If you need to update MarkItDown as well:
