@@ -90,7 +90,7 @@ These two functions only fire when `basic-tool-grouping` context is unavailable;
 
 **Spinner frame source**
 
-A single helper (extracted from `thinking-steps/render.ts`) is imported by `basic-tool-grouping.ts` so both components use the same frames and the same warning color. Living location: `extensions/_shared/spinner.ts` (new file).
+A single helper (extracted from `thinking-steps/render.ts`) is imported by `basic-tool-grouping.ts` so both components use the same frames and the same warning color. Living location: `extensions/spinner.ts` (new file at the same level as the other extensions, since there is no existing `_shared/` precedent in this repo). Exports a single function returning the framed glyph; both consumers pass their own per-render frame index.
 
 ### Out of scope: TodoOverlay widget content color
 
@@ -131,11 +131,15 @@ These four rules already exist inside `PROMPT_GUIDELINES`. The change is that th
 
 ## Validation plan
 
-1. Unit tests covering color tokens for each renderer's done/running/error state. Update existing assertions to reflect the new tier rules.
+1. Update unit tests so each renderer's color-token assertions reflect the new tier rules. Files affected (expected):
+   - `tests/repo-map-read-block.test.ts` — basic-tool-grouping done/running/error color and marker assertions.
+   - `tests/thinking-steps.test.ts` — done header `muted`, role glyph `muted`, active step `muted` text + bold + warning spinner marker.
+   - `tests/grouping-showcase.test.ts` — multi-tool transcript expectations.
+   - `tests/todo.test.ts` — standalone-fallback renderer color, and a new assertion that the system-prompt injection contains the four rules.
+   - `tests/ui-tools.test.ts` — work_checkpoint injection co-existence (assert both sections present, in deterministic order).
 2. `npm run check` clean.
 3. `npm run test:tui-capture` showing thinking + tool group + todo in one transcript, with manual inspection of the colors against the tier table.
 4. `npm run test:tui-capture:current` (real settings) to verify nothing in the live extension load path regresses.
-5. A focused replay test that exercises the new todo system-prompt injection: assert that the four rules above appear once and only once per turn, and that they co-exist with the `work_checkpoint` injection.
 
 ## Open questions
 
