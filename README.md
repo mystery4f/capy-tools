@@ -17,6 +17,9 @@ This package bundles a practical set of editing, fetch, web-reference, compact b
 - `ask-question` (`ask_question` tool)
 - `ask-questionnaire` (`ask_questionnaire` tool)
 - `sourcegraph`
+- `work-checkpoint` (`work_checkpoint` tool)
+- `thinking-steps` (passive renderer for chain-of-thought blocks; no user-facing controls)
+- `todo` (forked task-tracking tool with a compact above-editor overlay; replays state across `/reload` and compaction)
 
 ## Core helper tools
 
@@ -38,11 +41,15 @@ This package bundles a practical set of editing, fetch, web-reference, compact b
 
 `ask_questionnaire` adds a multi-question TUI for batching related questions with suggested options, recommended defaults, free-text answers, and a submit review screen.
 
-> Looking for task tracking? `todo` is no longer shipped here. Install [`@tintinweb/pi-tasks`](https://github.com/tintinweb/pi-tasks) for `TaskCreate`/`TaskList`/`TaskUpdate` and friends.
+`work_checkpoint` adds a lightweight self-reminder for Codex-style progress narration: after a consecutive group of basic tools ends, the agent should write one short paragraph summarizing what it just did, what it learned, and what it will do next. Agents may also call it between work segments when they need an explicit reminder to pause and summarize before continuing.
+
+`thinking-steps` rewires Pi's built-in thinking renderer so chain-of-thought blocks use `├ `/`└ ` tree connectors with per-role glyphs (◫ inspect, ⌕ search, ✎ write, ▸ run, ↗ network, ◇ plan, ↔ compare, ✓ verify) and the same accent/muted color tokens as `enable-builtin-search`'s compact tool grouping. It is intentionally a passive renderer: no slash command, no shortcut, no status bar entry, and no persistence file. The renderer patches `AssistantMessageComponent` at session start, locks the view to `summary` mode (latest-N chronological steps), and releases the patch on session shutdown so Pi's native renderer comes back automatically. Multiple thinking blocks within one assistant message merge into a single `Thinking Steps · N thoughts` card. Forked from [pi-thinking-steps](https://github.com/fluxgear/pi-thinking-steps) (MIT, fluxgear); see `extensions/thinking-steps/LICENSE` for the original copyright notice.
+
+`todo` is a single tool with the `create / update / list / get / delete / clear` actions used to track multi-step work — the agent marks tasks `in_progress` before starting, `completed` immediately after finishing, and uses `blockedBy` (with cycle detection) to express dependencies. State is replayed from the current branch on session start, compaction, and tree fork, so a `/reload` or branch switch preserves the task list. A persistent overlay above the editor shows a compact `Todos N/M` view (status glyphs, dimmed strikethrough on completed rows, `· <activeForm>` annotation on the in-progress row) that collapses overflow rather than scrolling. Forked from [`@juicesharp/rpiv-todo`](https://www.npmjs.com/package/@juicesharp/rpiv-todo) (MIT, juicesharp); the per-call surface is rewritten to flow through this package's basic-tool grouping (`Tracked N todos` header + single-line `• Added <subject>` rows) and the optional `@juicesharp/rpiv-i18n` peer dep is dropped. See `extensions/todo/LICENSE` for the original copyright notice.
 
 ### Built-in search activation
 
-`enable-builtin-search` activates pi's internal `grep`, `find`, and `ls` tools. It also installs compact group-aware renderers for common basic tools (`read`, `bash`, `edit`, `write`, `grep`, `find`, `ls`, and this package's file/navigation tools), so consecutive basic-tool calls collapse into one `TOOLS` block and split again when a non-basic tool appears. Legacy custom `glob`, `grep`, and `list` implementations were removed so they cannot shadow pi's built-ins.
+`enable-builtin-search` activates pi's internal `grep`, `find`, and `ls` tools. It also installs compact group-aware renderers for common basic tools (`read`, `bash`, `edit`, `write`, `grep`, `find`, `ls`, and this package's file/navigation tools), so consecutive basic-tool calls collapse into a Codex-style action block like `Ran 3 commands` or `Explored 3 targets` and split again when a non-basic tool appears. Each tool row uses a tree connector (`├ `/`└ `) plus a role glyph; `write_stdin` polls and writes are aggregated onto the parent `exec_command` row's meta (e.g. `· 2 polls · 1 write`) instead of rendering as separate rows. Legacy custom `glob`, `grep`, and `list` implementations were removed so they cannot shadow pi's built-ins.
 
 ## Runtime requirements and dependencies
 
@@ -109,7 +116,7 @@ npm run test:build
 npm run check
 ```
 
-For real TUI renderer validation, run the PTY capture harness. It launches an actual interactive `pi` instance, captures the terminal ANSI stream, writes a plain-text transcript under `.pi/tui-captures/`, and asserts that the grouped `TOOLS` block contains `symbol_outline`, `read_block`, and `grep` without `grep grep` duplication:
+For real TUI renderer validation, run the PTY capture harness. It launches an actual interactive `pi` instance, captures the terminal ANSI stream, writes a plain-text transcript under `.pi/tui-captures/`, and asserts that the grouped action block uses the Codex-style rows (`Explored 3 targets`, `Outline`, `Read`, and `Search`) without `grep grep` duplication:
 
 ```bash
 npm run test:tui-capture
@@ -121,7 +128,7 @@ To validate the user's normal Pi loading path rather than the isolated local-ext
 npm run test:tui-capture:current
 ```
 
-Test coverage includes `repo_map`, `read_block`, `symbol_outline`, `apply_patch`, `exec_command`, `write_stdin`, `ask_user`, `ask_question`, `ask_questionnaire`, `fetch`, `sourcegraph`, grouped basic-tool rendering, `enable-builtin-search`, TUI capture harness support, and package wiring. See [`docs/testing.md`](docs/testing.md) for the dependency checklist, public research summary, and recommended pi extension testing workflow.
+Test coverage includes `repo_map`, `read_block`, `symbol_outline`, `apply_patch`, `exec_command`, `write_stdin`, `ask_user`, `ask_question`, `ask_questionnaire`, `work_checkpoint`, `fetch`, `sourcegraph`, Codex-style compact tool rendering, grouped basic-tool rendering, `enable-builtin-search`, TUI capture harness support, and package wiring. See [`docs/testing.md`](docs/testing.md) for the dependency checklist, public research summary, and recommended pi extension testing workflow.
 
 ## Update
 
