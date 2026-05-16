@@ -134,6 +134,42 @@ describe("thinking-steps parse + render", () => {
     expect(lines.some((line) => line.startsWith("  \u2514 "))).toBe(true);
   });
 
+  test("done Thinking summary header uses muted color (not accent)", () => {
+    const steps = deriveThinkingSteps(sampleBlocks);
+    const lines = renderThinkingStepsLines(taggingTheme, 200, {
+      mode: "summary",
+      steps,
+      activeStepId: undefined,
+      isActive: false,
+    });
+    expect(lines[0]).toContain("<muted>Thinking</muted>");
+    expect(lines[0]).not.toContain("<accent>Thinking</accent>");
+  });
+
+  test("active Thinking summary header stays warning", () => {
+    const steps = deriveThinkingSteps(sampleBlocks);
+    const lines = renderThinkingStepsLines(taggingTheme, 200, {
+      mode: "summary",
+      steps,
+      activeStepId: steps[0]!.id,
+      isActive: true,
+    });
+    expect(lines[0]).toContain("<warning>Thinking</warning>");
+  });
+
+  test("done collapsed Thinking label uses muted (not accent)", () => {
+    const steps = deriveThinkingSteps(sampleBlocks);
+    const lines = renderThinkingStepsLines(taggingTheme, 200, {
+      mode: "collapsed",
+      steps,
+      activeStepId: undefined,
+      isActive: false,
+      nowMs: 0,
+    });
+    expect(lines[0]).toContain("<muted>Thinking</muted>");
+    expect(lines[0]).not.toContain("<accent>Thinking</accent>");
+  });
+
   test("role glyphs render in muted color regardless of role", () => {
     const blocks = makeBlocks(
       "I need to compare the new and old renderers carefully.",

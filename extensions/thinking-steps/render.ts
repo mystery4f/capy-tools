@@ -313,7 +313,7 @@ function renderGroupHeader(
   // count is always the true total even when summary mode shows fewer
   // selected steps below, again matching the basic-tool group title which
   // reports the real number of tool calls in the group.
-  const titleColor = isActive ? "warning" : "accent";
+  const titleColor = isActive ? "warning" : "muted";
   const title = theme.fg(titleColor, "Thinking");
   const subtitle = theme.fg("muted", pluralSteps(totalSteps));
   return truncateToWidth(`${title} ${subtitle}`, width, "");
@@ -331,7 +331,7 @@ function renderCollapsed(
   if (!step) return [];
 
   const style = stepStyle(step, isActive);
-  const label = theme.fg(isActive ? "warning" : "accent", "Thinking");
+  const label = theme.fg(isActive ? "warning" : "muted", "Thinking");
   const sep = theme.fg("muted", "·");
   const glyph = theme.fg(roleColor(step.role), roleGlyph(step.role));
   const pulse = isActive ? ` ${pulseGlyph(theme, nowMs)}` : "";
