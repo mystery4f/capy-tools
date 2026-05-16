@@ -1,5 +1,6 @@
 import { keyHint } from "@earendil-works/pi-coding-agent";
 import { Container, type Component, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
+import { ROLE_GLYPHS, renderTreeRow, type VisualRole, type VisualStatus } from "./shared/visual.ts";
 
 export type BasicToolRole = "inspect" | "search" | "write" | "run" | "network" | "ask" | "plan" | "default";
 
@@ -186,22 +187,6 @@ function bumpGroup(group: ToolGroup | undefined): void {
   if (group) group.version += 1;
 }
 
-function roleIcon(item: ToolItem): string {
-  if (item.status === "error") return "!";
-  if (item.status === "success") return "✓";
-  if (item.status === "running") return "·";
-  const role = item.resultSummary?.role ?? item.summary.role ?? roleForTool(item.toolName);
-  switch (role) {
-    case "inspect": return "◫";
-    case "search": return "⌕";
-    case "write": return "✎";
-    case "run": return "◇";
-    case "network": return "↗";
-    case "ask": return "?";
-    default: return "·";
-  }
-}
-
 function roleForTool(toolName: string): BasicToolRole {
   if (["read", "read_block", "symbol_outline", "repo_map", "ls"].includes(toolName)) return "inspect";
   if (["grep", "find", "sourcegraph", "fffind", "ffgrep", "fff-multi-grep"].includes(toolName)) return "search";
@@ -212,120 +197,96 @@ function roleForTool(toolName: string): BasicToolRole {
   return "default";
 }
 
-function statusRole(item: ToolItem): string {
-  if (item.status === "error") return "error";
-  if (item.status === "running" || item.status === "pending") return "warning";
-  return "muted";
-}
-
 function displaySummary(item: ToolItem): BasicToolSummary {
   return item.resultSummary ?? item.summary;
 }
 
-function joinSummaryParts(summary: BasicToolSummary): string {
-  const parts: string[] = [];
-  if (summary.title) parts.push(summary.title);
-  if (summary.target) parts.push(summary.target);
-  if (summary.detail) parts.push(`· ${summary.detail}`);
-  return parts.join(" ");
+function statusFor(item: ToolItem): VisualStatus {
+  if (item.status === "error") return "error";
+  if (item.status === "pending" || item.status === "running") return "running";
+  return "done";
 }
 
-const MAX_ACTION_CONTINUATION_LINES = 3;
+function visualRoleFor(item: ToolItem): VisualRole {
+  const raw = item.resultSummary?.role ?? item.summary.role ?? roleForTool(item.toolName);
+  switch (raw) {
+    case "inspect":
+    case "search":
+    case "write":
+    case "run":
+    case "network":
+    case "plan":
+    case "ask":
+      return raw;
+    default:
+      return "default";
+  }
+}
+
+function formatTreeItem(item: ToolItem, theme: any, width: number, isLast: boolean): string[] {
+  const headline = actionHeadline(item);
+  const summary = displaySummary(item);
+  return renderTreeRow({
+    theme,
+    width,
+    isLast,
+    role: visualRoleFor(item),
+    status: statusFor(item),
+    headline,
+    meta: summary.detail,
+  });
+}
 
 /**
  * Build the single-line per-call headline. The verb is rolled into the line
- * itself (Read foo.ts, Search needle, Ran git status, …) so that consecutive
- * calls render as one line each instead of the old 2-line `Explored / └ Read X`
- * box. The umbrella verb still appears once per group via groupTitle()
- * (Explored N targets / Used N tools / …), so the action category stays
- * obvious without N copies of the same word.
+ * itself (Read foo.ts, Search needle, Ran git status, …) so consecutive calls
+ * render as one line each instead of a 2-line `Explored / └ Read X` box. The
+ * umbrella verb still appears once per group via groupTitle() (Explored N
+ * targets / Used N tools / …).
+ *
+ * The headline does NOT include the result detail (`· 2 lines`); that is
+ * rendered as separate meta in renderTreeRow / BasicToolItemComponent so the
+ * marker, headline, and meta columns stay visually distinct.
  */
 function actionHeadline(item: ToolItem): string {
   const summary = displaySummary(item);
   const target = summary.target;
-  const detail = summary.detail;
   const title = summary.title;
-  const suffix = detail ? ` · ${detail}` : "";
 
   if (item.toolName === "bash" || item.toolName === "exec_command")
-    return `Ran ${target ?? title ?? item.toolName}${suffix}`;
+    return `Ran ${target ?? title ?? item.toolName}`;
   if (item.toolName === "write_stdin") {
     const verb = title ?? "stdin";
     const tag = target ? ` ${target}` : "";
-    return `${verb}${tag}${suffix}`;
+    return `${verb}${tag}`;
   }
-  if (item.toolName === "apply_patch") return `Edited${detail ? ` · ${detail}` : ""}`;
+  if (item.toolName === "apply_patch") return "Edited";
   if (item.toolName === "grep" || item.toolName === "ffgrep")
-    return `Search ${target ?? ""}${suffix}`.trim();
-  if (item.toolName === "fff-multi-grep") return `Search ${target ?? ""}${suffix}`.trim();
+    return `Search ${target ?? ""}`.trim();
+  if (item.toolName === "fff-multi-grep") return `Search ${target ?? ""}`.trim();
   if (item.toolName === "find" || item.toolName === "fffind")
-    return `Find ${target ?? ""}${suffix}`.trim();
-  if (item.toolName === "ls") return `List ${target ?? "."}${suffix}`;
+    return `Find ${target ?? ""}`.trim();
+  if (item.toolName === "ls") return `List ${target ?? "."}`;
   if (item.toolName === "read" || item.toolName === "read_block")
-    return `Read ${target ?? title ?? item.toolName}${suffix}`;
-  if (item.toolName === "symbol_outline") return `Outline ${target ?? ""}${suffix}`.trim();
-  if (item.toolName === "repo_map") return `Map ${target ?? "project"}${suffix}`;
-  if (item.toolName === "fetch") return target ? `Fetched ${target}${suffix}` : `Fetched${suffix}`;
-  if (item.toolName === "sourcegraph") return `Search Sourcegraph ${target ?? ""}${suffix}`.trim();
+    return `Read ${target ?? title ?? item.toolName}`;
+  if (item.toolName === "symbol_outline") return `Outline ${target ?? ""}`.trim();
+  if (item.toolName === "repo_map") return `Map ${target ?? "project"}`;
+  if (item.toolName === "fetch") return target ? `Fetched ${target}` : "Fetched";
+  if (item.toolName === "sourcegraph") return `Search Sourcegraph ${target ?? ""}`.trim();
   if (item.toolName === "todo") {
     // todo callers wire their verb into summary.title (Added / Started /
-    // Done / Reopened / Updated / Removed / Listed todos / Cleared todos
-    // / Read todo). Target is the subject line; detail is the post-result
-    // outcome (e.g. `#3 pending`).
+    // Done / Reopened / Updated / Removed / Listed todos / Cleared todos /
+    // Read todo). Target is the subject line; detail (post-result outcome
+    // like `#3 pending`) flows through the meta column.
     const verb = title ?? "todo";
-    return `${verb}${target ? ` ${target}` : ""}${suffix}`;
+    return `${verb}${target ? ` ${target}` : ""}`;
   }
 
-  const fallback = joinSummaryParts(summary);
-  if (title) return `${title} ${target ?? ""}${suffix}`.trim();
-  return fallback || item.toolName;
-}
-
-function splitToWidth(text: string, width: number): { head: string; tail: string } {
-  const maxWidth = Math.max(1, width);
-  let used = 0;
-  let index = 0;
-  let lastBreakIndex = 0;
-  for (const char of text) {
-    const charWidth = visibleWidth(char);
-    if (used + charWidth > maxWidth) break;
-    used += charWidth;
-    index += char.length;
-    if (/\s/.test(char)) lastBreakIndex = index;
-  }
-  const breakWidth = lastBreakIndex > 0 ? visibleWidth(text.slice(0, lastBreakIndex).trimEnd()) : 0;
-  const splitIndex = index < text.length && breakWidth >= maxWidth * 0.55 ? lastBreakIndex : index;
-  return { head: text.slice(0, splitIndex).trimEnd(), tail: text.slice(splitIndex).trimStart() };
-}
-
-function wrapActionLine(marker: string, headline: string, theme: any, item: ToolItem, width: number): string[] {
-  const statusColor = statusRole(item);
-  const headlineRole = item.status === "error" ? "error" : "muted";
-  const firstPrefix = `${theme.fg(statusColor, marker)} `;
-  const continuationPrefix = `  ${theme.fg("muted", "│")} `;
-  const firstWidth = Math.max(1, width - visibleWidth(`${marker} `));
-  const continuationWidth = Math.max(1, width - visibleWidth("  │ "));
-  const first = splitToWidth(headline, firstWidth);
-  const lines = [`${firstPrefix}${theme.fg(headlineRole, first.head || headline)}`];
-  let rest = first.tail;
-  for (let index = 0; rest && index < MAX_ACTION_CONTINUATION_LINES; index += 1) {
-    const part = splitToWidth(rest, continuationWidth);
-    const suffix = part.tail && index === MAX_ACTION_CONTINUATION_LINES - 1 ? "..." : "";
-    lines.push(`${continuationPrefix}${theme.fg(headlineRole, `${part.head}${suffix}`)}`);
-    rest = suffix ? "" : part.tail;
-  }
-  return lines;
-}
-
-function formatCompactItem(item: ToolItem, theme: any, width: number): string[] {
-  const headline = actionHeadline(item);
-  // Marker shape encodes state so item text can stay muted in all non-error
-  // cases:  running -> warning ◐ , error -> error ! , done -> muted • .
-  let marker: string;
-  if (item.status === "error") marker = "!";
-  else if (item.status === "running" || item.status === "pending") marker = "◐";
-  else marker = "•";
-  return wrapActionLine(marker, headline, theme, item, width);
+  if (title) return `${title} ${target ?? ""}`.trim();
+  const parts: string[] = [];
+  if (summary.title) parts.push(summary.title);
+  if (summary.target) parts.push(summary.target);
+  return parts.join(" ") || item.toolName;
 }
 
 function groupStatus(group: ToolGroup): "running" | "error" | "done" {
@@ -356,8 +317,10 @@ function renderGroupLines(group: ToolGroup, expanded: boolean, theme: any, width
   const maxItems = expanded ? 80 : MAX_COLLAPSED_ITEMS;
   const visible = group.items.slice(-maxItems);
   const lines = [theme.fg(titleRole, groupTitle(group))];
-  for (const item of visible) {
-    lines.push(...formatCompactItem(item, theme, width));
+  for (let index = 0; index < visible.length; index += 1) {
+    const item = visible[index]!;
+    const isLast = index === visible.length - 1;
+    lines.push(...formatTreeItem(item, theme, width, isLast));
   }
   const hidden = group.items.length - visible.length;
   if (expanded && hidden > 0) lines.push(theme.fg("muted", `… ${hidden} earlier call${hidden === 1 ? "" : "s"}`));
@@ -397,7 +360,20 @@ class BasicToolItemComponent implements Component {
   ) {}
 
   render(width: number): string[] {
-    return formatCompactItem(this.item, this.theme, width).map((line) => truncateToWidth(line, Math.max(1, width)));
+    const headline = actionHeadline(this.item);
+    const summary = displaySummary(this.item);
+    const status = statusFor(this.item);
+    const role = visualRoleFor(this.item);
+    const marker = (() => {
+      if (status === "error") return { glyph: "!", color: "error" };
+      if (status === "running") return { glyph: "◐", color: "warning" };
+      return { glyph: ROLE_GLYPHS[role] ?? "·", color: "muted" };
+    })();
+    const textColor = status === "error" ? "error" : "muted";
+    const headlinePainted = this.theme.fg(textColor, headline);
+    const metaPainted = summary.detail ? this.theme.fg(textColor, `  · ${summary.detail}`) : "";
+    const line = `${this.theme.fg(marker.color, marker.glyph)} ${headlinePainted}${metaPainted}`;
+    return [truncateToWidth(line, Math.max(1, width), "")];
   }
 
   invalidate(): void {}
