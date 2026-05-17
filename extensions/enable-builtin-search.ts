@@ -2,6 +2,7 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { createBashTool, createEditTool, createEditToolDefinition, createFindTool, createGrepTool, createLsTool, createReadTool, createWriteTool, createWriteToolDefinition, keyHint } from "@earendil-works/pi-coding-agent";
 import { Text } from "@earendil-works/pi-tui";
 import { canGroupTool, installBasicToolGrouping, renderGroupedToolCall, renderGroupedToolResult, summarizeToolCall } from "./basic-tool-grouping.ts";
+import { hasRtk, rtkSpawnHook } from "./rtk.ts";
 
 const DEFAULT_BUILTINS = new Set(["read", "bash", "edit", "write"]);
 const SEARCH_BUILTINS = ["grep", "find", "ls"] as const;
@@ -87,7 +88,8 @@ function registerCompactBuiltInRenderers(pi: ExtensionAPI) {
       return renderGroupedToolResult("bash", result, options, theme, context);
     },
     async execute(toolCallId, params, signal, onUpdate, ctx) {
-      return createBashTool(ctx.cwd).execute(toolCallId, params, signal, onUpdate);
+      const options = hasRtk() ? { spawnHook: rtkSpawnHook } : undefined;
+      return createBashTool(ctx.cwd, options).execute(toolCallId, params, signal, onUpdate);
     },
   });
 

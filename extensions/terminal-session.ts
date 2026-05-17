@@ -5,6 +5,7 @@ import { keyHint } from "@earendil-works/pi-coding-agent";
 import { Container, Text } from "@earendil-works/pi-tui";
 import { Type } from "@sinclair/typebox";
 import { canGroupTool, renderGroupedToolCall, renderGroupedToolResult, summarizeToolCall } from "./basic-tool-grouping.ts";
+import { rtkRewrite } from "./rtk.ts";
 
 const DEFAULT_YIELD_TIME_MS = 1000;
 const DEFAULT_MAX_OUTPUT_BYTES = 12_000;
@@ -435,11 +436,12 @@ export default function terminalSessionExtension(pi: ExtensionAPI): void {
         });
       }
 
+      const spawnCommand = rtkRewrite(command);
       const session: TerminalSession = {
         id: nextSessionId++,
         command,
         cwd,
-        child: spawn(command, { cwd, env: process.env, shell: true, stdio: "pipe", detached: process.platform !== "win32" }),
+        child: spawn(spawnCommand, { cwd, env: process.env, shell: true, stdio: "pipe", detached: process.platform !== "win32" }),
         startedAt,
         status: "running",
         output: "",
