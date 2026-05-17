@@ -633,14 +633,14 @@ export function installBasicToolGrouping(pi: { on?: (event: string, handler: Fun
   // collapse to zero lines (otherwise the constructor's unconditional Spacer
   // produces one stacked blank line per hidden tool — see
   // extensions/tool-execution-patch.ts for the full explanation).
-  pi.on("session_start", async () => {
-    try {
-      const release = await retainToolExecutionPatch();
-      state.patchReleases.push(release);
-    } catch (error) {
-      console.warn(`pi-basic-tools basic-tool-grouping: tool-execution patch unavailable (${error instanceof Error ? error.message : String(error)})`);
-    }
-  });
+  //
+  // Fire eagerly (not on session_start) so the prototype is patched before the
+  // first tool render. retainToolExecutionPatch is async (dynamic import), but
+  // the module is already loaded by Pi at this point so the await resolves on
+  // the next microtask — well before any render happens.
+  retainToolExecutionPatch()
+    .then((release) => state.patchReleases.push(release))
+    .catch((error) => console.warn(`pi-basic-tools basic-tool-grouping: tool-execution patch unavailable (${error instanceof Error ? error.message : String(error)})`));
 
   pi.on("session_shutdown", async () => {
     const release = state.patchReleases.pop();
