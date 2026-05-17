@@ -1,3 +1,4 @@
+import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -126,7 +127,24 @@ function getPackageRoot(packageName: string): string {
   }
 }
 
+function requirePiCodingAgentInternal<TModule>(relativePath: string): TModule {
+  const packageRoot = getPackageRoot("@earendil-works/pi-coding-agent");
+  const modulePath = join(packageRoot, relativePath);
+  try {
+    const require = createRequire(import.meta.url);
+    return require(modulePath) as TModule;
+  } catch {
+    // Fall through to async path below.
+    throw new Error(`sync require failed for ${modulePath}`);
+  }
+}
+
 async function importPiCodingAgentInternal<TModule>(relativePath: string): Promise<TModule> {
+  try {
+    return requirePiCodingAgentInternal<TModule>(relativePath);
+  } catch {
+    // sync require failed (ESM-only module?); fall back to async import.
+  }
   const packageRoot = getPackageRoot("@earendil-works/pi-coding-agent");
   const moduleUrl = pathToFileURL(join(packageRoot, relativePath)).href;
   try {
@@ -139,10 +157,7 @@ async function importPiCodingAgentInternal<TModule>(relativePath: string): Promi
   }
 }
 
-async function installPatch(): Promise<() => void> {
-  const moduleExports = await importPiCodingAgentInternal<{ ToolExecutionComponent: unknown }>(
-    PI_TOOL_EXECUTION_MODULE,
-  );
+function applyPatch(moduleExports: { ToolExecutionComponent: unknown }): () => void {
   const ToolExecutionComponent = assertPatchableToolExecutionComponent(moduleExports.ToolExecutionComponent);
   const prototype = ToolExecutionComponent.prototype as ToolExecutionPrototype & Record<string, any>;
   const registry = getOverrideRegistry();
@@ -209,6 +224,33 @@ async function installPatch(): Promise<() => void> {
     if (prototype.getResultRenderer === patchedGetResultRenderer) prototype.getResultRenderer = originalGetResultRenderer;
     if (prototype.getRenderShell === patchedGetRenderShell) prototype.getRenderShell = originalGetRenderShell;
   };
+}
+
+async function installPatch(): Promise<() => void> {
+  const moduleExports = await importPiCodingAgentInternal<{ ToolExecutionComponent: unknown }>(
+    PI_TOOL_EXECUTION_MODULE,
+  );
+  return applyPatch(moduleExports);
+}
+
+/**
+ * Try to apply the prototype patches synchronously via `require()`.
+ * Returns true if the patch was installed; false if sync resolution
+ * failed (the caller should fall back to the async path).
+ */
+export function tryInstallPatchSync(): boolean {
+  const patchState = getPatchState();
+  if (patchState.cleanup) return true;
+  try {
+    const moduleExports = requirePiCodingAgentInternal<{ ToolExecutionComponent: unknown }>(
+      PI_TOOL_EXECUTION_MODULE,
+    );
+    patchState.cleanup = applyPatch(moduleExports);
+    patchState.refCount = Math.max(1, patchState.refCount);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function retainToolExecutionPatch(): Promise<() => Promise<void>> {

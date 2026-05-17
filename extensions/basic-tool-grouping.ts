@@ -1,7 +1,7 @@
 import { keyHint } from "@earendil-works/pi-coding-agent";
 import { Container, type Component, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import { ROLE_GLYPHS, renderTreeRow, type VisualRole, type VisualStatus } from "./shared/visual.ts";
-import { registerToolDefinitionOverride, retainToolExecutionPatch } from "./tool-execution-patch.ts";
+import { registerToolDefinitionOverride, retainToolExecutionPatch, tryInstallPatchSync } from "./tool-execution-patch.ts";
 
 export type BasicToolRole = "inspect" | "search" | "write" | "run" | "network" | "ask" | "plan" | "default";
 
@@ -634,13 +634,14 @@ export function installBasicToolGrouping(pi: { on?: (event: string, handler: Fun
   // produces one stacked blank line per hidden tool — see
   // extensions/tool-execution-patch.ts for the full explanation).
   //
-  // Fire eagerly (not on session_start) so the prototype is patched before the
-  // first tool render. retainToolExecutionPatch is async (dynamic import), but
-  // the module is already loaded by Pi at this point so the await resolves on
-  // the next microtask — well before any render happens.
-  retainToolExecutionPatch()
-    .then((release) => state.patchReleases.push(release))
-    .catch((error) => console.warn(`pi-basic-tools basic-tool-grouping: tool-execution patch unavailable (${error instanceof Error ? error.message : String(error)})`));
+  // Try synchronous require() first — this patches the prototype immediately
+  // during extension load, before any render cycle runs. If the CJS require
+  // fails (e.g. ESM-only build), fall back to the async dynamic import path.
+  if (!tryInstallPatchSync()) {
+    retainToolExecutionPatch()
+      .then((release) => state.patchReleases.push(release))
+      .catch((error) => console.warn(`pi-basic-tools basic-tool-grouping: tool-execution patch unavailable (${error instanceof Error ? error.message : String(error)})`));
+  }
 
   pi.on("session_shutdown", async () => {
     const release = state.patchReleases.pop();
