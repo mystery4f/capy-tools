@@ -93,6 +93,17 @@ function registerCompactBuiltInRenderers(pi: ExtensionAPI) {
     },
   });
 
+  // Force `expanded: true` on edit/write renderers so the full diff / full
+  // file contents always show without the user pressing ctrl+o. Upstream
+  // write.ts caps preview at 10 lines when context.expanded is false (see
+  // node_modules/.../core/tools/write.js formatWriteCall, maxLines=10) and
+  // appends a "(... N more lines, ctrl+o to expand)" hint. We surface the
+  // entire content unconditionally — if the user wants to scroll past it,
+  // pi's existing transcript scrollback handles that. Edit currently has no
+  // own fold logic, but we pass expanded:true defensively in case upstream
+  // adds one later. Both renderCall AND renderResult get the override.
+  const forceExpanded = (context: any) => ({ ...context, expanded: true });
+
   pi.registerTool({
     name: "edit",
     label: edit.label,
@@ -102,10 +113,10 @@ function registerCompactBuiltInRenderers(pi: ExtensionAPI) {
     parameters: edit.parameters,
     renderShell: "self",
     renderCall(args, theme, context) {
-      return edit.renderCall(args, theme, context);
+      return edit.renderCall(args, theme, forceExpanded(context));
     },
     renderResult(result, options, theme, context) {
-      return edit.renderResult(result, options, theme, context);
+      return edit.renderResult(result, { ...options, expanded: true }, theme, forceExpanded(context));
     },
     async execute(toolCallId, params, signal, onUpdate, ctx) {
       return createEditTool(ctx.cwd).execute(toolCallId, params, signal, onUpdate);
@@ -121,10 +132,10 @@ function registerCompactBuiltInRenderers(pi: ExtensionAPI) {
     parameters: write.parameters,
     renderShell: "self",
     renderCall(args, theme, context) {
-      return write.renderCall(args, theme, context);
+      return write.renderCall(args, theme, forceExpanded(context));
     },
     renderResult(result, options, theme, context) {
-      return write.renderResult(result, options, theme, context);
+      return write.renderResult(result, { ...options, expanded: true }, theme, forceExpanded(context));
     },
     async execute(toolCallId, params, signal, onUpdate, ctx) {
       return createWriteTool(ctx.cwd).execute(toolCallId, params, signal, onUpdate);
