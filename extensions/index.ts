@@ -14,6 +14,7 @@ import recapExtension from "./recap.ts";
 import messageShapeDiagnosticExtension from "./message-shape-diagnostic.ts";
 import thinkingStepsExtension from "./thinking-steps/index.ts";
 import todoExtension from "./todo/index.ts";
+import catWhimsicalExtension from "./cat-whimsical/index.ts";
 
 export default function piBasicToolsExtension(pi: ExtensionAPI): void {
   // Load all tools through one entrypoint so shared renderer state is truly shared.
@@ -33,4 +34,9 @@ export default function piBasicToolsExtension(pi: ExtensionAPI): void {
   messageShapeDiagnosticExtension(pi);
   thinkingStepsExtension(pi);
   todoExtension(pi);
+  // Registered AFTER todoExtension so the cat-whimsical working message sits
+  // below the todo overlay in pi's UI (forked from
+  // https://github.com/lulucatdev/pi-cat-whimsical, MIT). See
+  // extensions/cat-whimsical/index.ts header for full attribution.
+  catWhimsicalExtension(pi);
 }
