@@ -215,7 +215,7 @@ export default function (pi: ExtensionAPI) {
 					signal: controller.signal,
 					headers: {
 						"Content-Type": "application/json",
-						"User-Agent": "pi-basic-tools/1.0",
+						"User-Agent": "capy-tools/1.0",
 					},
 					body: JSON.stringify({
 						query: SEARCH_QUERY,

@@ -1,5 +1,5 @@
 /**
- * pi-basic-tools fork of @juicesharp/rpiv-todo (MIT, juicesharp).
+ * Capy Tools fork of @juicesharp/rpiv-todo (MIT, juicesharp).
  *
  * Replay todo state from the current branch. The last `toolResult` whose
  * `toolName === "todo"` and whose `details` matches the `TaskDetails` shape

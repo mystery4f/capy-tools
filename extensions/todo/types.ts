@@ -1,5 +1,5 @@
 /**
- * pi-basic-tools fork of @juicesharp/rpiv-todo (MIT, juicesharp).
+ * Capy Tools fork of @juicesharp/rpiv-todo (MIT, juicesharp).
  *
  * Types + TypeBox schema for the `todo` tool. The schema is byte-equivalent
  * to upstream so the LLM-facing parameter surface is unchanged and any
@@ -7,7 +7,7 @@
  *
  * User-facing strings (ERR_REQUIRES_INTERACTIVE, MSG_NO_TODOS) are dropped
  * because this fork removes the /todos slash command. Locale-aware status
- * labels are dropped because pi-basic-tools is English-only.
+ * labels are dropped because Capy Tools is English-only.
  */
 
 import { StringEnum } from "@earendil-works/pi-ai";

@@ -1,8 +1,8 @@
-# pi-basic-tools
+# Capy Tools
 
-Standalone basic tools for pi.
+Capy Tools is a capybara-flavoured toolkit for pi. The npm package remains `@capyup/pi-basic-tools` for compatibility, but the plugin/repo brand is Capy Tools.
 
-This package bundles a practical set of editing, fetch, web-reference, compact basic-tool UI, and built-in search activation extensions split out from `pi-goodstuff`.
+This package bundles a practical set of editing, fetch, web-reference, compact basic-tool UI, todo, working-message, and built-in search activation extensions split out from `pi-goodstuff`.
 
 ## Included extensions
 
@@ -20,7 +20,7 @@ This package bundles a practical set of editing, fetch, web-reference, compact b
 - `recap` (`recap` tool)
 - `thinking-steps` (passive renderer for chain-of-thought blocks; no user-facing controls)
 - `todo` (forked task-tracking tool with a compact above-editor overlay; replays state across `/reload` and compaction)
-- `cat-whimsical` (forked cat-life working-message renderer with a four-language `/cat-whimsical-settings` panel)
+- `working-message` (forked calm animal-life working-message renderer with a four-language `/capy-tools-settings` panel)
 
 ## Core helper tools
 
@@ -58,7 +58,7 @@ The prompt uses invitational "discipline" language (no `must` / `Do not` / `---`
 
 `todo` is a single tool with the `create / update / list / get / delete / clear` actions used to track multi-step work — the agent marks tasks `in_progress` before starting, `completed` immediately after finishing, and uses `blockedBy` (with cycle detection) to express dependencies. State is replayed from the current branch on session start, compaction, and tree fork, so a `/reload` or branch switch preserves the task list. A persistent overlay above the editor shows a compact `Todos N/M` view (status glyphs, dimmed strikethrough on completed rows, `· <activeForm>` annotation on the in-progress row) that collapses overflow rather than scrolling. Forked from [`@juicesharp/rpiv-todo`](https://www.npmjs.com/package/@juicesharp/rpiv-todo) (MIT, juicesharp); the per-call surface is rewritten to flow through this package's basic-tool grouping (`Tracked N todos` header + single-line `• Added <subject>` rows) and the optional `@juicesharp/rpiv-i18n` peer dep is dropped. See `extensions/todo/LICENSE` for the original copyright notice.
 
-`cat-whimsical` replaces pi's default spinner working message with short cat-life narration in one of four languages (English, Chinese, Japanese, Korean). The `/cat-whimsical-settings` slash command opens a settings panel for switching language, and the choice persists to `~/.pi/agent/cat-whimsical.json` (same path the upstream standalone used, so existing settings carry over). The extension is registered AFTER `todo` in `extensions/index.ts` so the cat working message sits below the todo overlay in pi's UI rather than being layered above it. Forked from [pi-cat-whimsical](https://github.com/lulucatdev/pi-cat-whimsical) (MIT, lulucatdev); see `extensions/cat-whimsical/LICENSE` for the original copyright notice.
+`working-message` replaces pi's default spinner working message with short calm animal-life narration in one of four languages (English, Chinese, Japanese, Korean). Use `/capy-tools-settings` for all Capy Tools settings; today it exposes the working-message language picker and persists to the unified config file `~/.pi/agent/capy-tools.json`. On first run it migrates the old standalone `~/.pi/agent/cat-whimsical.json` language value into the unified config. The extension is registered AFTER `todo` in `extensions/index.ts` so the Capy Tools working message sits below the todo overlay in pi's UI rather than being layered above it. Forked from [pi-cat-whimsical](https://github.com/lulucatdev/pi-cat-whimsical) (MIT, lulucatdev); see `extensions/cat-whimsical/LICENSE` for the original copyright notice.
 
 ### Built-in search activation
 
@@ -206,7 +206,7 @@ read .pi/fetch/<timestamp>-<slug>/meta.json
 
 ## Future tool ideas
 
-Good candidates for later `pi-basic-tools` additions:
+Good candidates for later Capy Tools additions:
 
 - `diagnostics` / `check`: run project-aware lint/test/typecheck commands with structured, compressed results.
 - `symbols`: LSP or Serena-backed `find_symbol`, `references`, and safe rename/replace helpers.

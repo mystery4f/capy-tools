@@ -1,4 +1,4 @@
-# Testing pi-basic-tools
+# Testing Capy Tools
 
 This project intentionally uses a strict, real-dependency test suite. The default test command does not skip network, filesystem, Git, or external CLI behavior. If a required dependency is unavailable, the test should fail so the failure is visible.
 

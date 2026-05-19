@@ -1,9 +1,9 @@
 /**
- * pi-basic-tools fork of @juicesharp/rpiv-todo (MIT, juicesharp).
+ * Capy Tools fork of @juicesharp/rpiv-todo (MIT, juicesharp).
  *
  * Per-call render hooks for the `todo` tool.
  *
- * Visual language is aligned with the rest of pi-basic-tools' compact tool
+ * Visual language is aligned with the rest of Capy Tools' compact tool
  * grouping (`extensions/basic-tool-grouping.ts`):
  *
  *   • Added <subject>            ← create

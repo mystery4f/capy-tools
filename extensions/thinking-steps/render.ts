@@ -404,7 +404,7 @@ type MergeRegistryEntry = {
   blocks: ThinkingSourceBlock[];
 };
 
-const MERGE_REGISTRY_KEY = Symbol.for("pi-basic-tools.thinking-steps.merge-registry");
+const MERGE_REGISTRY_KEY = Symbol.for("capy-tools.thinking-steps.merge-registry");
 
 function getMergeRegistry(): Map<string, MergeRegistryEntry> {
   const existing = (globalThis as Record<PropertyKey, unknown>)[MERGE_REGISTRY_KEY];

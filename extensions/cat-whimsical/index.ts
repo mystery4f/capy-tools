@@ -1,19 +1,18 @@
 /**
- * pi-basic-tools fork of [pi-cat-whimsical](https://github.com/lulucatdev/pi-cat-whimsical) (MIT, lulucatdev).
+ * Capy Tools working-message renderer, forked from
+ * [pi-cat-whimsical](https://github.com/lulucatdev/pi-cat-whimsical) (MIT,
+ * lulucatdev).
  *
- * Renders cat-life narration as pi's working message instead of the default
- * spinner text. Bundled into pi-basic-tools so registration order is under
- * this package's control (placed AFTER `todoExtension` in `extensions/index.ts`
- * so the working message sits below the todo overlay in pi's UI rather than
- * being layered above it). The original upstream package can stay uninstalled
- * — see CHANGELOG 0.10.0 for the rationale.
+ * Capy means capybara (卡皮巴拉). The extension renders calm animal-life
+ * narration as pi's working message instead of the default spinner text.
+ * Bundling it into Capy Tools keeps registration order under this package's
+ * control: it is placed AFTER `todoExtension` in `extensions/index.ts` so the
+ * working message sits below the todo overlay in pi's UI.
  *
- * Behavioural compatibility kept with upstream:
- *   - Same slash command name (`/cat-whimsical-settings`), so muscle memory
- *     and any saved aliases continue to work.
- *   - Same global config file path (`~/.pi/agent/cat-whimsical.json`), so a
- *     user's previously-saved language preference carries over unchanged.
- *   - Same four languages (en / zh / ja / ko) with the same message corpora.
+ * Settings are now centralized in `~/.pi/agent/capy-tools.json` and exposed
+ * through `/capy-tools-settings`. The old `~/.pi/agent/cat-whimsical.json`
+ * file is read once as a migration source so existing language preferences
+ * carry over.
  *
  * See `extensions/cat-whimsical/LICENSE` for the original MIT copyright
  * notice.
@@ -31,7 +30,8 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import { Container, type SettingItem, SettingsList, Spacer, Text } from "@earendil-works/pi-tui";
 
-const GLOBAL_CONFIG_PATH = join(getAgentDir(), "cat-whimsical.json");
+const GLOBAL_CONFIG_PATH = join(getAgentDir(), "capy-tools.json");
+const LEGACY_CAT_CONFIG_PATH = join(getAgentDir(), "cat-whimsical.json");
 
 const LANGUAGE_LABELS = {
   en: "English",
@@ -42,8 +42,12 @@ const LANGUAGE_LABELS = {
 
 type Language = keyof typeof LANGUAGE_LABELS;
 
-type CatWhimsicalSettings = {
+type WorkingMessageSettings = {
   language: Language;
+};
+
+type CapyToolsSettings = {
+  workingMessage: WorkingMessageSettings;
 };
 
 type MessageSet = {
@@ -54,8 +58,10 @@ type MessageSet = {
   separator: string;
 };
 
-const DEFAULT_SETTINGS: CatWhimsicalSettings = {
-  language: "en",
+const DEFAULT_SETTINGS: CapyToolsSettings = {
+  workingMessage: {
+    language: "en",
+  },
 };
 
 const MESSAGE_SETS: Record<Language, MessageSet> = {
@@ -273,28 +279,47 @@ function parseLanguage(value: string): Language | undefined {
   return label?.[0];
 }
 
-function normalizeSettings(value: unknown): CatWhimsicalSettings {
-  if (!value || typeof value !== "object") return { ...DEFAULT_SETTINGS };
+function normalizeWorkingMessageSettings(value: unknown): WorkingMessageSettings {
+  if (!value || typeof value !== "object") return { ...DEFAULT_SETTINGS.workingMessage };
 
   const language = typeof (value as { language?: unknown }).language === "string"
     ? parseLanguage((value as { language: string }).language)
     : undefined;
 
   return {
-    language: language ?? DEFAULT_SETTINGS.language,
+    language: language ?? DEFAULT_SETTINGS.workingMessage.language,
   };
 }
 
-async function loadSettings(): Promise<CatWhimsicalSettings> {
+function normalizeSettings(value: unknown): CapyToolsSettings {
+  if (!value || typeof value !== "object") return structuredClone(DEFAULT_SETTINGS);
+
+  const rawWorkingMessage = (value as { workingMessage?: unknown }).workingMessage;
+  // Legacy cat-whimsical config stored language at the top level.
+  const workingMessage = rawWorkingMessage === undefined
+    ? normalizeWorkingMessageSettings(value)
+    : normalizeWorkingMessageSettings(rawWorkingMessage);
+
+  return { workingMessage };
+}
+
+async function loadSettings(): Promise<CapyToolsSettings> {
   try {
     const raw = await readFile(GLOBAL_CONFIG_PATH, "utf8");
     return normalizeSettings(JSON.parse(raw));
   } catch {
-    return { ...DEFAULT_SETTINGS };
+    try {
+      const legacyRaw = await readFile(LEGACY_CAT_CONFIG_PATH, "utf8");
+      const migrated = normalizeSettings(JSON.parse(legacyRaw));
+      await writeSettings(migrated);
+      return migrated;
+    } catch {
+      return structuredClone(DEFAULT_SETTINGS);
+    }
   }
 }
 
-async function writeSettings(settings: CatWhimsicalSettings): Promise<void> {
+async function writeSettings(settings: CapyToolsSettings): Promise<void> {
   await mkdir(dirname(GLOBAL_CONFIG_PATH), { recursive: true });
   await writeFile(GLOBAL_CONFIG_PATH, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
 }
@@ -319,7 +344,7 @@ function pickRandom(language: Language): string {
 
 async function openSettingsDialog(
   ctx: ExtensionCommandContext,
-  settings: CatWhimsicalSettings,
+  settings: CapyToolsSettings,
   onLanguageChange: (language: Language) => Promise<void>,
 ): Promise<void> {
   if (!ctx.hasUI) return;
@@ -328,15 +353,15 @@ async function openSettingsDialog(
     {
       id: "language",
       label: "Language",
-      description: "Select the language used for cat working messages.",
-      currentValue: loadLanguageLabel(settings.language),
+      description: "Select the language used for Capy Tools working messages.",
+      currentValue: loadLanguageLabel(settings.workingMessage.language),
       values: Object.values(LANGUAGE_LABELS),
     },
   ];
 
   await ctx.ui.custom<void>((tui, theme, _keybindings, done) => {
     const container = new Container();
-    container.addChild(new Text(theme.fg("accent", theme.bold("Cat whimsical settings")), 1, 0));
+    container.addChild(new Text(theme.fg("accent", theme.bold("Capy Tools settings")), 1, 0));
     container.addChild(new Spacer(1));
 
     const settingsList = new SettingsList(
@@ -374,14 +399,14 @@ async function openSettingsDialog(
   });
 }
 
-export default function catWhimsicalExtension(pi: ExtensionAPI): void {
-  let settings: CatWhimsicalSettings = { ...DEFAULT_SETTINGS };
+export default function workingMessageExtension(pi: ExtensionAPI): void {
+  let settings: CapyToolsSettings = structuredClone(DEFAULT_SETTINGS);
 
-  const applySettings = async (ctx: ExtensionContext, nextSettings: CatWhimsicalSettings): Promise<void> => {
+  const applySettings = async (ctx: ExtensionContext, nextSettings: CapyToolsSettings): Promise<void> => {
     settings = nextSettings;
     await writeSettings(settings);
     if (ctx.hasUI) {
-      ctx.ui.notify(`Cat whimsical language set to ${loadLanguageLabel(settings.language)}.`, "info");
+      ctx.ui.notify(`Capy Tools language set to ${loadLanguageLabel(settings.workingMessage.language)}.`, "info");
     }
   };
 
@@ -389,8 +414,8 @@ export default function catWhimsicalExtension(pi: ExtensionAPI): void {
     settings = await loadSettings();
   });
 
-  pi.registerCommand("cat-whimsical-settings", {
-    description: "Open the cat whimsical language settings panel.",
+  pi.registerCommand("capy-tools-settings", {
+    description: "Open the Capy Tools settings panel.",
     handler: async (args, ctx) => {
       const trimmed = args.trim();
 
@@ -401,18 +426,18 @@ export default function catWhimsicalExtension(pi: ExtensionAPI): void {
           return;
         }
 
-        await applySettings(ctx, { language });
+        await applySettings(ctx, { ...settings, workingMessage: { language } });
         return;
       }
 
       await openSettingsDialog(ctx, settings, async (language) => {
-        await applySettings(ctx, { language });
+        await applySettings(ctx, { ...settings, workingMessage: { language } });
       });
     },
   });
 
   pi.on("turn_start", async (_event, ctx) => {
-    ctx.ui.setWorkingMessage(pickRandom(settings.language));
+    ctx.ui.setWorkingMessage(pickRandom(settings.workingMessage.language));
   });
 
   pi.on("turn_end", async (_event, ctx) => {

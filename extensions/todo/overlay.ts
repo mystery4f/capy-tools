@@ -1,9 +1,9 @@
 /**
- * pi-basic-tools fork of @juicesharp/rpiv-todo (MIT, juicesharp).
+ * Capy Tools fork of @juicesharp/rpiv-todo (MIT, juicesharp).
  *
  * Persistent todo overlay widget mounted above the editor.
  *
- * Visual language is rewritten to match the rest of pi-basic-tools: a
+ * Visual language is rewritten to match the rest of Capy Tools: a
  * compact header line (`Todos N/M` styled like `Used N tools` /
  * `Thinking N steps`) followed by `• <glyph> <subject>` rows. The original
  * `├─/└─` tree-branch connectors are dropped because we use `•` as the row
@@ -28,7 +28,7 @@ import {
 } from "./state.ts";
 import { formatStatusLabel, type Task, type TaskStatus } from "./types.ts";
 
-const WIDGET_KEY = "pi-basic-tools-todos";
+const WIDGET_KEY = "capy-tools-todos";
 const MAX_WIDGET_LINES = 12;
 
 /**

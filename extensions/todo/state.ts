@@ -1,11 +1,11 @@
 /**
- * pi-basic-tools fork of @juicesharp/rpiv-todo (MIT, juicesharp).
+ * Capy Tools fork of @juicesharp/rpiv-todo (MIT, juicesharp).
  *
  * Combined state module: live state cell, pure reducer, selectors,
  * transition invariants, and cycle/inverse-edge helpers for the task-graph.
  * Upstream split these across `state/state.ts`, `state-reducer.ts`,
  * `selectors.ts`, `invariants.ts`, `task-graph.ts`, `store.ts`; merging
- * them keeps the fork compact since pi-basic-tools doesn't need the
+ * them keeps the fork compact since Capy Tools doesn't need the
  * deeper-import seams that upstream's monorepo callers relied on.
  */
 

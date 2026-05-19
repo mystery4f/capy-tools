@@ -11,7 +11,7 @@ async function readJson(path: string) {
 }
 
 describe("package wiring", () => {
-  test("registers only the current pi-basic-tools extensions", async () => {
+  test("registers only the current Capy Tools extensions", async () => {
     const pkg = await readJson(packageJsonPath);
     expect(pkg.pi.extensions).toEqual(["./extensions/index.ts"]);
 

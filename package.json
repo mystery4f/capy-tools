@@ -1,10 +1,10 @@
 {
   "name": "@capyup/pi-basic-tools",
   "version": "0.9.1",
-  "description": "Standalone core productivity tools for pi: repo_map, read_block, symbol_outline, apply_patch, exec_command, write_stdin, grouped basic-tool UI, recap, ask_user, ask_question, ask_questionnaire, fetch, Sourcegraph, and built-in search activation. (todo split out into @tintinweb/pi-tasks.)",
+  "description": "Capy Tools: capybara-flavoured productivity tools for pi, including repo_map, read_block, symbol_outline, apply_patch, exec_command, write_stdin, grouped basic-tool UI, recap, todo, working messages, ask tools, fetch, Sourcegraph, and built-in search activation.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/capyup/pi-basic-tools.git"
+    "url": "git+https://github.com/capyup/capy-tools.git"
   },
   "author": "capyup",
   "license": "MIT",
@@ -14,7 +14,9 @@
     "pi",
     "pi-extension",
     "editing",
-    "search"
+    "search",
+    "capy-tools",
+    "capybara"
   ],
   "files": [
     "extensions/",

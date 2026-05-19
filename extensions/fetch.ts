@@ -367,7 +367,7 @@ export default function (pi: ExtensionAPI) {
 			try {
 				const response = await fetch(url, {
 					signal: controller.signal,
-					headers: { "User-Agent": "pi-basic-tools/1.0" },
+					headers: { "User-Agent": "capy-tools/1.0" },
 					redirect: "follow",
 				});
 

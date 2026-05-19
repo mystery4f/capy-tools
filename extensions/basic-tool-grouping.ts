@@ -70,8 +70,8 @@ const BASIC_TOOL_NAMES = new Set([
   "todo",
 ]);
 
-const STATE_KEY = Symbol.for("pi-basic-tools.basic-tool-grouping.state");
-const STDIN_KEY = Symbol.for("pi-basic-tools.basic-tool-grouping.stdin");
+const STATE_KEY = Symbol.for("capy-tools.basic-tool-grouping.state");
+const STDIN_KEY = Symbol.for("capy-tools.basic-tool-grouping.stdin");
 const MAX_COLLAPSED_ITEMS = 5;
 const MAX_GROUP_ITEMS = 12;
 
@@ -641,7 +641,7 @@ export function installBasicToolGrouping(pi: { on?: (event: string, handler: Fun
   if (!tryInstallPatchSync()) {
     retainToolExecutionPatch()
       .then((release) => state.patchReleases.push(release))
-      .catch((error) => console.warn(`pi-basic-tools basic-tool-grouping: tool-execution patch unavailable (${error instanceof Error ? error.message : String(error)})`));
+      .catch((error) => console.warn(`Capy Tools basic-tool-grouping: tool-execution patch unavailable (${error instanceof Error ? error.message : String(error)})`));
   }
 
   pi.on("session_shutdown", async () => {
@@ -651,7 +651,7 @@ export function installBasicToolGrouping(pi: { on?: (event: string, handler: Fun
       await release();
     } catch (error) {
       state.patchReleases.push(release);
-      console.warn(`pi-basic-tools basic-tool-grouping: tool-execution patch release failed (${error instanceof Error ? error.message : String(error)})`);
+      console.warn(`Capy Tools basic-tool-grouping: tool-execution patch release failed (${error instanceof Error ? error.message : String(error)})`);
     }
   });
 }

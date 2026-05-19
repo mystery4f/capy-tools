@@ -142,7 +142,7 @@ export default function messageShapeDiagnosticExtension(pi: ExtensionAPI): void 
         warnedOnce = true;
         const msg = error instanceof Error ? error.message : String(error);
         // eslint-disable-next-line no-console
-        console.warn(`[pi-basic-tools] message-shape-diagnostic failed to write ${logPath}: ${msg}`);
+        console.warn(`[capy-tools] message-shape-diagnostic failed to write ${logPath}: ${msg}`);
       }
     }
   });

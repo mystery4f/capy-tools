@@ -1,5 +1,5 @@
 /**
- * pi-basic-tools fork of @juicesharp/rpiv-todo (MIT, juicesharp).
+ * Capy Tools fork of @juicesharp/rpiv-todo (MIT, juicesharp).
  *
  * Extension entry. Registers the `todo` tool, mounts the persistent overlay
  * widget above the editor, and replays todo state from the current branch

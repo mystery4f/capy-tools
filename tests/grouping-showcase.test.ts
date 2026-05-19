@@ -60,19 +60,19 @@ describe("grouping showcase - harmless combos", () => {
 
     renderGroupedToolCall("grep", { pattern: "BasicToolGroup", path: "extensions" }, theme, ctx("c1"));
     renderGroupedToolCall("find", { pattern: "*.ts", path: "tests" }, theme, ctx("c2"));
-    renderGroupedToolCall("sourcegraph", { query: "repo:capyup/pi-basic-tools file:.ts" }, theme, ctx("c3"));
+    renderGroupedToolCall("sourcegraph", { query: "repo:capyup/capy-tools file:.ts" }, theme, ctx("c3"));
 
     renderGroupedToolResult("grep", okResult("extensions/basic-tool-grouping.ts:42\nextensions/basic-tool-grouping.ts:88", { lineCount: 2 }), { expanded: false, isPartial: false }, theme, ctx("c1"));
     renderGroupedToolResult("find", okResult("tests/ui-tools.test.ts\ntests/extension-host.ts", { lineCount: 2 }), { expanded: false, isPartial: false }, theme, ctx("c2"));
     renderGroupedToolResult("sourcegraph", okResult("repo_map-read-block.test.ts\napply-patch.test.ts", { lineCount: 2 }), { expanded: false, isPartial: false }, theme, ctx("c3"));
 
-    const collapsed = render(renderGroupedToolCall("sourcegraph", { query: "repo:capyup/pi-basic-tools file:.ts" }, theme, ctx("c3", false)), 80);
+    const collapsed = render(renderGroupedToolCall("sourcegraph", { query: "repo:capyup/capy-tools file:.ts" }, theme, ctx("c3", false)), 80);
     console.log("\n=== Combo B: 纯 search 三连 (collapsed) ===\n" + collapsed);
 
     expect(collapsed).toContain("Explored 3 targets");
     expect(collapsed).toContain("Search BasicToolGroup");
     expect(collapsed).toContain("Find *.ts");
-    expect(collapsed).toContain("Search Sourcegraph repo:capyup/pi-basic-tools file:.ts");
+    expect(collapsed).toContain("Search Sourcegraph repo:capyup/capy-tools file:.ts");
     expect(collapsed).toContain("├ ");
     expect(collapsed).toContain("└ ");
   });

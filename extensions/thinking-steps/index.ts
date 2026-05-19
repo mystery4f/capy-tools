@@ -14,13 +14,13 @@ import {
   takeThinkingPatchRelease,
 } from "./state.ts";
 
-// pi-basic-tools fork of pi-thinking-steps (MIT, fluxgear).
+// Capy Tools fork of pi-thinking-steps (MIT, fluxgear).
 //
 // This extension is intentionally invisible to the user.  It exposes no
 // slash command, no shortcut, no status bar entry, and no persistence file.
 // On session start it installs Pi's `AssistantMessageComponent` patch and
 // locks the renderer to `summary` so chain-of-thought blocks render in the
-// same Codex-style `\u2022 \u2026 \u2502 \u2026 \u2514` shape as the rest of pi-basic-tools.
+// same Codex-style `\u2022 \u2026 \u2502 \u2026 \u2514` shape as the rest of Capy Tools.
 // On session shutdown the patch is released so Pi's native renderer comes
 // back if the extension is unloaded.
 
@@ -33,7 +33,7 @@ function reportPatchError(ctx: ExtensionContext, error: unknown): void {
   // for maintainers.
   const message = error instanceof Error ? error.message : String(error);
   void ctx;
-  console.warn(`pi-basic-tools thinking-steps: patch unavailable, falling back to Pi's native renderer (${message})`);
+  console.warn(`Capy Tools thinking-steps: patch unavailable, falling back to Pi's native renderer (${message})`);
 }
 
 export default function thinkingStepsExtension(pi: ExtensionAPI): void {

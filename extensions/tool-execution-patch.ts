@@ -18,8 +18,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 // suppressed.
 
 const PI_TOOL_EXECUTION_MODULE = "dist/modes/interactive/components/tool-execution.js";
-const PATCH_STATE_KEY = Symbol.for("pi-basic-tools.tool-execution-patch.state");
-const OVERRIDE_REGISTRY_KEY = Symbol.for("pi-basic-tools.tool-execution-patch.overrides");
+const PATCH_STATE_KEY = Symbol.for("capy-tools.tool-execution-patch.state");
+const OVERRIDE_REGISTRY_KEY = Symbol.for("capy-tools.tool-execution-patch.overrides");
 // Strip CSI / SGR ANSI escape sequences so colored-but-blank lines are still
 // detected as visually empty.
 const ANSI_RE = /\[[0-9;?]*[A-Za-z]/g;
