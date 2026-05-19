@@ -28,8 +28,9 @@ import {
   type ExtensionCommandContext,
   type ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
-import { Container, type SettingItem, SettingsList, Spacer, Text } from "@earendil-works/pi-tui";
+import { Container, Loader, type SettingItem, SettingsList, Spacer, Text } from "@earendil-works/pi-tui";
 
+const WORKING_MESSAGE_WIDGET_KEY = "capy-tools-working-message";
 const GLOBAL_CONFIG_PATH = join(getAgentDir(), "capy-tools.json");
 const LEGACY_CAT_CONFIG_PATH = join(getAgentDir(), "cat-whimsical.json");
 
@@ -437,10 +438,33 @@ export default function workingMessageExtension(pi: ExtensionAPI): void {
   });
 
   pi.on("turn_start", async (_event, ctx) => {
-    ctx.ui.setWorkingMessage(pickRandom(settings.workingMessage.language));
+    if (!ctx.hasUI) return;
+
+    const message = pickRandom(settings.workingMessage.language);
+    // Pi's built-in working loader lives in the status container, which is
+    // above extension widgets. Render our own loader widget instead so it can
+    // sit after the todo widget in the above-editor stack.
+    ctx.ui.setWorkingVisible(false);
+    ctx.ui.setWidget(
+      WORKING_MESSAGE_WIDGET_KEY,
+      (tui, theme) => {
+        const loader = new Loader(
+          tui,
+          (spinner) => theme.fg("accent", spinner),
+          (text) => theme.fg("muted", text),
+          message,
+        );
+        loader.start();
+        return Object.assign(loader, { dispose: () => loader.stop() });
+      },
+      { placement: "aboveEditor" },
+    );
   });
 
   pi.on("turn_end", async (_event, ctx) => {
-    ctx.ui.setWorkingMessage();
+    if (!ctx.hasUI) return;
+
+    ctx.ui.setWidget(WORKING_MESSAGE_WIDGET_KEY, undefined);
+    ctx.ui.setWorkingVisible(true);
   });
 }
