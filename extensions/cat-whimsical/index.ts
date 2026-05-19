@@ -234,6 +234,24 @@ function finish(message: string): string {
   return `${message.trim().replace(/[.。!！?？]+$/u, "")}...`;
 }
 
+function pickRandom(language: Language): string {
+  const set = MESSAGE_SETS[language];
+
+  if (Math.random() < 0.12) {
+    return finish(pick(set.rareMoments));
+  }
+
+  const includeTime = Math.random() < 0.7;
+  const includeThought = Math.random() < 0.75;
+  const parts: string[] = [];
+
+  if (includeTime) parts.push(pick(set.timePhrases));
+  parts.push(pick(set.actions));
+  if (includeThought) parts.push(pick(set.thoughts));
+
+  return finish(parts.join(set.separator));
+}
+
 export default function workingMessageExtension(pi: ExtensionAPI): void {
   pi.on("session_start", async () => {
     await restoreCapyToolsSettings();
