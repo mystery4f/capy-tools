@@ -14,6 +14,7 @@ import { getAgentDir } from "@earendil-works/pi-coding-agent";
 export const CAPY_TOOLS_CONFIG_PATH = join(getAgentDir(), "capy-tools.json");
 export const LEGACY_WORKING_MESSAGE_CONFIG_PATH = join(getAgentDir(), "cat-whimsical.json");
 export const LEGACY_AUTO_COMPACT_CONFIG_PATH = join(getAgentDir(), "auto-compact-settings.json");
+export const LEGACY_PI_SETTINGS_PATH = join(getAgentDir(), "settings.json");
 
 export const LANGUAGE_LABELS = {
   en: "English",
@@ -41,9 +42,15 @@ export type AutoCompactConfig = {
   strategy: CompactionStrategy;
 };
 
+export type CodexFastConfig = {
+  /** Whether OpenAI/OpenAI Codex requests should request the priority service tier. */
+  enabled: boolean;
+};
+
 export type CapyToolsSettings = {
   workingMessage: WorkingMessageSettings;
   autoCompact: AutoCompactConfig;
+  codexFast: CodexFastConfig;
 };
 
 export const DEFAULT_WORKING_MESSAGE_SETTINGS: WorkingMessageSettings = {
@@ -57,9 +64,14 @@ export const DEFAULT_AUTO_COMPACT_CONFIG: AutoCompactConfig = {
   strategy: "keep-recent",
 };
 
+export const DEFAULT_CODEX_FAST_CONFIG: CodexFastConfig = {
+  enabled: false,
+};
+
 export const DEFAULT_CAPY_TOOLS_SETTINGS: CapyToolsSettings = {
   workingMessage: DEFAULT_WORKING_MESSAGE_SETTINGS,
   autoCompact: DEFAULT_AUTO_COMPACT_CONFIG,
+  codexFast: DEFAULT_CODEX_FAST_CONFIG,
 };
 
 export const AUTO_COMPACT_PRESETS = [80, 85, 90, 95] as const;
@@ -120,15 +132,31 @@ export function normalizeAutoCompactConfig(value: unknown): AutoCompactConfig {
   };
 }
 
+export function normalizeCodexFastConfig(value: unknown): CodexFastConfig {
+  if (!value || typeof value !== "object") return { ...DEFAULT_CODEX_FAST_CONFIG };
+  const enabled = (value as { enabled?: unknown }).enabled;
+  return {
+    enabled: typeof enabled === "boolean" ? enabled : DEFAULT_CODEX_FAST_CONFIG.enabled,
+  };
+}
+
 export function normalizeCapyToolsSettings(value: unknown): CapyToolsSettings {
   if (!value || typeof value !== "object") return structuredClone(DEFAULT_CAPY_TOOLS_SETTINGS);
 
-  const raw = value as { workingMessage?: unknown; autoCompact?: unknown };
+  const raw = value as { workingMessage?: unknown; autoCompact?: unknown; codexFast?: unknown };
   return {
     // Legacy cat-whimsical config stored `language` at the top level.
     workingMessage: normalizeWorkingMessageSettings(raw.workingMessage ?? value),
     autoCompact: normalizeAutoCompactConfig(raw.autoCompact),
+    codexFast: normalizeCodexFastConfig(raw.codexFast),
   };
+}
+
+function normalizeLegacyCodexFastSettings(value: unknown): CodexFastConfig | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const extensionSettings = (value as Record<string, unknown>)["pi-codex-fast"];
+  if (!extensionSettings || typeof extensionSettings !== "object") return undefined;
+  return normalizeCodexFastConfig(extensionSettings);
 }
 
 async function readJson(path: string): Promise<unknown | undefined> {
@@ -169,6 +197,18 @@ export async function restoreCapyToolsSettings(): Promise<CapyToolsSettings> {
       next = {
         ...next,
         autoCompact: normalizeAutoCompactConfig(legacyAutoCompact),
+      };
+      shouldWrite = true;
+    }
+  }
+
+  if (!unifiedObject || unifiedObject.codexFast === undefined) {
+    const legacyPiSettings = await readJson(LEGACY_PI_SETTINGS_PATH);
+    const legacyCodexFast = normalizeLegacyCodexFastSettings(legacyPiSettings);
+    if (legacyCodexFast !== undefined) {
+      next = {
+        ...next,
+        codexFast: legacyCodexFast,
       };
       shouldWrite = true;
     }

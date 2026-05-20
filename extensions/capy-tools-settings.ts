@@ -13,6 +13,7 @@ import {
   type CompactionStrategy,
 } from "./capy-tools-config.ts";
 import { formatAutoCompactStatus, persistAutoCompactConfig } from "./auto-compact.ts";
+import { formatCodexFastStatus, setCodexFastEnabled } from "./codex-fast.ts";
 
 function formatSettingsSummary(): string {
   const settings = getCapyToolsSettings();
@@ -21,6 +22,7 @@ function formatSettingsSummary(): string {
     `Auto-compact threshold: ${settings.autoCompact.autoCompactPercent}%`,
     `Keep recent budget:     ${settings.autoCompact.keepRecentPercent}%`,
     `Strategy:               ${STRATEGY_LABELS[settings.autoCompact.strategy]}`,
+    `Codex fast mode:        ${settings.codexFast.enabled ? "enabled" : "disabled"}`,
   ].join("\n");
 }
 
@@ -48,7 +50,9 @@ async function openSettingsMenu(ctx: ExtensionContext): Promise<void> {
         `Auto-compact threshold [${settings.autoCompact.autoCompactPercent}%]`,
         `Keep recent budget [${settings.autoCompact.keepRecentPercent}%]`,
         `Compaction strategy [${settings.autoCompact.strategy}]`,
+        `Codex fast mode [${settings.codexFast.enabled ? "enabled" : "disabled"}]`,
         "Auto-compact status",
+        "Codex fast status",
         "Reset auto-compact defaults",
         "Done",
       ],
@@ -113,8 +117,19 @@ async function openSettingsMenu(ctx: ExtensionContext): Promise<void> {
       continue;
     }
 
+    if (choice.startsWith("Codex fast mode")) {
+      const next = !settings.codexFast.enabled;
+      setCodexFastEnabled(next, ctx);
+      continue;
+    }
+
     if (choice === "Auto-compact status") {
       ctx.ui.notify(formatAutoCompactStatus(ctx), "info");
+      continue;
+    }
+
+    if (choice === "Codex fast status") {
+      ctx.ui.notify(formatCodexFastStatus(), "info");
       continue;
     }
 
@@ -135,7 +150,23 @@ export default function capyToolsSettingsExtension(pi: ExtensionAPI): void {
   pi.registerCommand("capy-tools-settings", {
     description: "Open the Capy Tools settings panel.",
     getArgumentCompletions: (prefix: string) => {
-      const values = ["settings", "status", "reset-auto-compact", "en", "zh", "ja", "ko", "English", "Chinese", "Japanese", "Korean"];
+      const values = [
+        "settings",
+        "status",
+        "reset-auto-compact",
+        "codex-fast on",
+        "codex-fast off",
+        "codex-fast toggle",
+        "codex-fast status",
+        "en",
+        "zh",
+        "ja",
+        "ko",
+        "English",
+        "Chinese",
+        "Japanese",
+        "Korean",
+      ];
       return values.filter((value) => value.toLowerCase().startsWith(prefix.toLowerCase())).map((value) => ({ value }));
     },
     handler: async (args, ctx) => {
@@ -152,6 +183,26 @@ export default function capyToolsSettingsExtension(pi: ExtensionAPI): void {
         return;
       }
 
+      if (trimmed === "codex-fast status") {
+        ctx.ui.notify(formatCodexFastStatus(), "info");
+        return;
+      }
+
+      if (trimmed === "codex-fast on" || trimmed === "enable-codex-fast") {
+        setCodexFastEnabled(true, ctx);
+        return;
+      }
+
+      if (trimmed === "codex-fast off" || trimmed === "disable-codex-fast") {
+        setCodexFastEnabled(false, ctx);
+        return;
+      }
+
+      if (trimmed === "codex-fast toggle") {
+        setCodexFastEnabled(!getCapyToolsSettings().codexFast.enabled, ctx);
+        return;
+      }
+
       if (trimmed === "reset-auto-compact" || trimmed === "auto-compact reset") {
         await persistAutoCompactConfig({ ...DEFAULT_AUTO_COMPACT_CONFIG });
         ctx.ui.notify("Auto-compact settings reset to defaults.", "info");
@@ -160,7 +211,10 @@ export default function capyToolsSettingsExtension(pi: ExtensionAPI): void {
 
       if (await setWorkingMessageLanguage(ctx, trimmed)) return;
 
-      ctx.ui.notify("Usage: /capy-tools-settings [settings|status|reset-auto-compact|en|zh|ja|ko]", "warning");
+      ctx.ui.notify(
+        "Usage: /capy-tools-settings [settings|status|reset-auto-compact|codex-fast on|codex-fast off|en|zh|ja|ko]",
+        "warning",
+      );
     },
   });
 }

@@ -2,8 +2,10 @@ import { describe, expect, test } from "bun:test";
 
 import {
   DEFAULT_AUTO_COMPACT_CONFIG,
+  DEFAULT_CODEX_FAST_CONFIG,
   normalizeAutoCompactConfig,
   normalizeCapyToolsSettings,
+  normalizeCodexFastConfig,
   normalizeWorkingMessageSettings,
 } from "../extensions/capy-tools-config.ts";
 
@@ -12,6 +14,7 @@ describe("Capy Tools config", () => {
     const settings = normalizeCapyToolsSettings({ language: "zh" });
     expect(settings.workingMessage.language).toBe("zh");
     expect(settings.autoCompact).toEqual(DEFAULT_AUTO_COMPACT_CONFIG);
+    expect(settings.codexFast).toEqual(DEFAULT_CODEX_FAST_CONFIG);
   });
 
   test("normalizes unified working-message and auto-compact settings", () => {
@@ -23,6 +26,7 @@ describe("Capy Tools config", () => {
         keepRecentPercent: 20,
         strategy: "keep-bookends",
       },
+      codexFast: { enabled: true },
     });
 
     expect(settings).toEqual({
@@ -33,11 +37,13 @@ describe("Capy Tools config", () => {
         keepRecentPercent: 20,
         strategy: "keep-bookends",
       },
+      codexFast: { enabled: true },
     });
   });
 
   test("falls back safely for invalid language and strategy values", () => {
     expect(normalizeWorkingMessageSettings({ language: "Martian" }).language).toBe("en");
     expect(normalizeAutoCompactConfig({ strategy: "delete-everything" }).strategy).toBe("keep-recent");
+    expect(normalizeCodexFastConfig({ enabled: "sometimes" }).enabled).toBe(false);
   });
 });

@@ -13,12 +13,17 @@ import sourcegraphExtension from "./sourcegraph.ts";
 import recapExtension from "./recap.ts";
 import messageShapeDiagnosticExtension from "./message-shape-diagnostic.ts";
 import autoCompactExtension from "./auto-compact.ts";
+import codexFastExtension from "./codex-fast.ts";
 import capyToolsSettingsExtension from "./capy-tools-settings.ts";
+import commandHistoryExtension from "./command-history.ts";
+import effortsExtension from "./efforts/index.ts";
+import codexGoalExtension from "./codex-goal/index.ts";
+import rtkExtension from "./rtk/index.ts";
 import thinkingStepsExtension from "./thinking-steps/index.ts";
 import todoExtension from "./todo/index.ts";
 import workingMessageExtension from "./cat-whimsical/index.ts";
 
-export default function piBasicToolsExtension(pi: ExtensionAPI): void {
+export default async function piBasicToolsExtension(pi: ExtensionAPI): Promise<void> {
   // Load all tools through one entrypoint so shared renderer state is truly shared.
   enableBuiltinSearchExtension(pi);
   fetchExtension(pi);
@@ -35,7 +40,12 @@ export default function piBasicToolsExtension(pi: ExtensionAPI): void {
   // Opt-in diagnostic: no-op unless PI_BASIC_TOOLS_DIAG_SHAPES is set.
   messageShapeDiagnosticExtension(pi);
   autoCompactExtension(pi);
+  codexFastExtension(pi);
   capyToolsSettingsExtension(pi);
+  commandHistoryExtension(pi);
+  effortsExtension(pi);
+  codexGoalExtension(pi);
+  await rtkExtension(pi);
   thinkingStepsExtension(pi);
   todoExtension(pi);
   // Registered AFTER todoExtension so the Capy Tools working message sits
