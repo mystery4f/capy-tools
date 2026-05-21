@@ -1,6 +1,6 @@
 # Capy Tools
 
-Capy Tools is a capybara-flavoured toolkit for pi. The npm package remains `@capyup/pi-basic-tools` for compatibility, but the plugin/repo brand is Capy Tools.
+Capy Tools is a capybara-flavoured toolkit for pi, published on npm as `@capyup/capy-tools`.
 
 This package bundles a practical set of editing, fetch, web-reference, compact basic-tool UI, todo, proactive auto-compaction, command history, custom model effort controls, Codex-style goals, RTK command-output compression, working-message, and built-in search activation extensions split out from `pi-goodstuff` and related standalone packages.
 
@@ -26,6 +26,7 @@ This package bundles a practical set of editing, fetch, web-reference, compact b
 - `efforts` (custom model-specific thinking/effort labels and payload rewrites)
 - `codex-goal` (`/goal`, `get_goal`, `create_goal`, and `update_goal` long-running goal tracking)
 - `rtk` (`/rtk`, bash auto-rewrite, and skill for Rust Token Killer output compression)
+- `showsignature` (`showsignature` tool for compact multi-language source signatures)
 - `working-message` (forked calm animal-life working-message renderer with a four-language `/capy-tools-settings` panel)
 
 ## Usage reference
@@ -70,6 +71,7 @@ These are the tools the agent can call. They appear in the model's tool list and
 | `ask_questionnaire` | Ask several related questions | Supports recommended choices, review/submit flow, and custom answers |
 | `fetch` | Fetch a URL and store artifacts | Saves raw response + Markdown under `.pi/fetch/`; returns the file path the agent should read next |
 | `sourcegraph` | Search public code/docs | Uses Sourcegraph API for examples, symbols, and reference implementations |
+| `showsignature` | Extract compact source structure | `file` or `folder`; `show_only`, `lang_only`, `capabilities`, `max_depth`, `max_files`; supports 25 languages/language families |
 | `read` | Read files | Pi built-in; Capy Tools keeps it active and renders it inside grouped inspect blocks |
 | `bash` | Run shell commands | Pi built-in; Capy Tools groups command rows and RTK can rewrite this tool's command before execution |
 | `grep` / `find` / `ls` | Search and inspect the filesystem | Pi built-ins activated by `enable-builtin-search`; rendered as compact search/inspect rows |
@@ -217,6 +219,8 @@ The prompt uses invitational "discipline" language (no `must` / `Do not` / `---`
 
 `rtk` integrates [rtk](https://github.com/rtk-ai/rtk) (Rust Token Killer) by intercepting the built-in `bash` tool, running `rtk rewrite <command>`, and replacing commands with token-optimized equivalents when rtk finds one. `/rtk` shows rtk analytics in a transient widget and supports `/rtk on`, `/rtk off`, `/rtk status`, and `/rtk clear`. A bundled `skills/rtk/SKILL.md` explains when to call `rtk read`, `rtk grep`, `rtk find`, and rtk meta commands directly. Forked from `@capyup/pi-rtk` v0.1.0 (MIT); behavior, environment variables, and the local LaTeX transcript summarizer are preserved.
 
+`showsignature` extracts a compact structural map from source files without reading full implementations. It supports single-file and folder scans, line numbers, Markdown output wrapping, test-file filtering, `.gitignore`-aware traversal, language filtering through `lang_only`, and `capabilities: true` discovery for supported languages and extract kinds. The default view focuses on signatures; `show_only` can request imports, interfaces, types, variables, comments, Markdown headings/tables/code blocks, LaTeX sections/commands/labels, CSS rules, data keys, SQL schema entries, and other language-specific slices. Current coverage includes TypeScript, JavaScript, Python, Go, Markdown/MDX, Rust, Elixir, LaTeX/BibTeX, Java, Kotlin, C#, C/C++, Ruby, PHP, Swift, Dart, Scala, R, Lua, Perl, Shell, SQL, CSS/Sass/Less, JSON/YAML/TOML/Notebook, and HTML/XML/SVG/Vue/Svelte. It is ported from [FredySandoval/showsignature](https://github.com/FredySandoval/showsignature) / `npm:showsignature` v0.1.6 (ISC); thanks to Fredy Sandoval for the original compact-signature design and parser/extractor structure. Capy Tools removes the CLI wrapper, exposes it as a pi tool, keeps TypeScript-family parsing AST-based, and adds dependency-free scanner adapters for the broader language set. See [`docs/bundled-sources.md`](docs/bundled-sources.md) for provenance.
+
 ### Built-in search activation
 
 `enable-builtin-search` activates pi's internal `grep`, `find`, and `ls` tools. It also installs compact group-aware renderers for common basic tools (`read`, `bash`, `edit`, `write`, `grep`, `find`, `ls`, and this package's file/navigation tools), so consecutive basic-tool calls collapse into a Codex-style action block like `Ran 3 commands` or `Explored 3 targets` and split again when a non-basic tool appears. Each tool row uses a tree connector (`├ `/`└ `) plus a role glyph; `write_stdin` polls and writes are aggregated onto the parent `exec_command` row's meta (e.g. `· 2 polls · 1 write`) instead of rendering as separate rows. Legacy custom `glob`, `grep`, and `list` implementations were removed so they cannot shadow pi's built-ins.
@@ -244,7 +248,7 @@ Several formerly standalone pi packages are bundled directly. See [`docs/bundled
 Install the pi package:
 
 ```bash
-pi install npm:@capyup/pi-basic-tools
+pi install npm:@capyup/capy-tools
 ```
 
 Install `pipx` if it is not already available:
@@ -301,14 +305,20 @@ To validate the user's normal Pi loading path rather than the isolated local-ext
 npm run test:tui-capture:current
 ```
 
-Test coverage includes `repo_map`, `read_block`, `symbol_outline`, `apply_patch`, `exec_command`, `write_stdin`, `ask_user`, `ask_question`, `ask_questionnaire`, `recap`, `fetch`, `sourcegraph`, command history, Codex fast mode, custom efforts, Codex goals, RTK helpers, Codex-style compact tool rendering, grouped basic-tool rendering, `enable-builtin-search`, TUI capture harness support, and package wiring. See [`docs/testing.md`](docs/testing.md) for the dependency checklist, public research summary, and recommended pi extension testing workflow.
+Test coverage includes `repo_map`, `read_block`, `symbol_outline`, `apply_patch`, `exec_command`, `write_stdin`, `ask_user`, `ask_question`, `ask_questionnaire`, `recap`, `fetch`, `sourcegraph`, `showsignature`, command history, Codex fast mode, custom efforts, Codex goals, RTK helpers, Codex-style compact tool rendering, grouped basic-tool rendering, `enable-builtin-search`, TUI capture harness support, and package wiring. The `showsignature` tests include a registry/extension matrix for every advertised language and extension, per-kind fixtures for all 25 supported language adapters, compact-output leak guards, comment parsing edge cases, `.gitignore` traversal, strict unsupported-kind handling, and tool integration. See [`docs/testing.md`](docs/testing.md) for the dependency checklist, public research summary, and recommended pi extension testing workflow.
 
 ## Update
 
 Update this package inside pi:
 
 ```bash
-pi update npm:@capyup/pi-basic-tools
+pi update npm:@capyup/capy-tools
+```
+
+If you still have the retired npm name installed, remove it after upgrading so commands and hooks are not registered twice:
+
+```bash
+pi remove npm:@capyup/pi-basic-tools
 ```
 
 If you need to update MarkItDown as well:

@@ -21,6 +21,7 @@ import codexGoalExtension from "./codex-goal/index.ts";
 import rtkExtension from "./rtk/index.ts";
 import thinkingStepsExtension from "./thinking-steps/index.ts";
 import todoExtension from "./todo/index.ts";
+import showsignatureExtension from "./showsignature.ts";
 import workingMessageExtension from "./cat-whimsical/index.ts";
 
 export default async function piBasicToolsExtension(pi: ExtensionAPI): Promise<void> {
@@ -48,6 +49,7 @@ export default async function piBasicToolsExtension(pi: ExtensionAPI): Promise<v
   await rtkExtension(pi);
   thinkingStepsExtension(pi);
   todoExtension(pi);
+  showsignatureExtension(pi);
   // Registered AFTER todoExtension so the Capy Tools working message sits
   // below the todo overlay in pi's UI (forked from
   // https://github.com/lulucatdev/pi-cat-whimsical, MIT). See

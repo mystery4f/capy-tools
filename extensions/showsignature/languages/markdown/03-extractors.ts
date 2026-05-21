@@ -1,0 +1,210 @@
+import type {
+  ExtractEntry,
+  ExtractKind,
+  Extractor,
+  ParseContext,
+  SingleExtractResult,
+} from "../../core-types";
+
+export const MARKDOWN_DOCUMENT_KIND = "md:all" as ExtractKind;
+export const MARKDOWN_HEADINGS_KIND = "md:headings" as ExtractKind;
+export const MARKDOWN_TABLES_KIND = "md:tables" as ExtractKind;
+export const MARKDOWN_CODEBLOCKS_KIND = "md:codeblocks" as ExtractKind;
+export const DATA_KEYS_KIND = "data:keys" as ExtractKind;
+
+interface SourceLine {
+  text: string;
+  start: number;
+}
+
+function toResult(
+  entries: ExtractEntry[],
+  warnings: SingleExtractResult["warnings"] = [],
+): SingleExtractResult {
+  return { entries, warnings };
+}
+
+function toEntry(
+  kind: ExtractEntry["kind"],
+  lines: string[],
+  filePath: string,
+  sourcePos: number,
+): ExtractEntry {
+  return {
+    kind,
+    lines,
+    metadata: {
+      filePath,
+      sourcePos,
+    },
+  };
+}
+
+function toSourceLines(source: string): SourceLine[] {
+  const lines = source.split(/\r?\n/u);
+  const output: SourceLine[] = [];
+  let start = 0;
+
+  for (const line of lines) {
+    output.push({ text: line, start });
+    start += line.length + 1;
+  }
+
+  return output;
+}
+
+function isHeadingLine(line: string): boolean {
+  return /^\s{0,3}#{1,6}\s+\S/u.test(line);
+}
+
+function isTableSeparator(line: string): boolean {
+  return /^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?\s*$/u.test(line);
+}
+
+function isTableLine(line: string): boolean {
+  const trimmed = line.trim();
+  return trimmed.length > 0 && trimmed.includes("|") && !trimmed.startsWith("```");
+}
+
+function createEntriesFromLines(
+  context: ParseContext,
+  kind: ExtractKind,
+  predicate: (line: string) => boolean,
+): ExtractEntry[] {
+  return toSourceLines(context.source)
+    .filter((line) => predicate(line.text))
+    .map((line) => toEntry(kind, [line.text], context.filePath, line.start));
+}
+
+function createTableEntries(context: ParseContext): ExtractEntry[] {
+  const lines = toSourceLines(context.source);
+  const entries: ExtractEntry[] = [];
+
+  for (let index = 0; index < lines.length - 1; index += 1) {
+    const header = lines[index];
+    const separator = lines[index + 1];
+    if (!header || !separator || !isTableLine(header.text) || !isTableSeparator(separator.text)) {
+      continue;
+    }
+
+    const tableLines: SourceLine[] = [header, separator];
+    let cursor = index + 2;
+    while (cursor < lines.length && isTableLine(lines[cursor]?.text ?? "")) {
+      tableLines.push(lines[cursor]!);
+      cursor += 1;
+    }
+    entries.push(toEntry(MARKDOWN_TABLES_KIND, tableLines.map((line) => line.text), context.filePath, header.start));
+    index = cursor - 1;
+  }
+
+  return entries;
+}
+
+function createCodeBlockEntries(context: ParseContext): ExtractEntry[] {
+  const entries: ExtractEntry[] = [];
+  const pattern = /^\s*```.*(?:\r?\n|$)[\s\S]*?^\s*```\s*$/gmu;
+
+  for (const match of context.source.matchAll(pattern)) {
+    const block = match[0] ?? "";
+    if (!block) {
+      continue;
+    }
+
+    entries.push(
+      toEntry(
+        MARKDOWN_CODEBLOCKS_KIND,
+        block.split(/\r?\n/u),
+        context.filePath,
+        match.index ?? 0,
+      ),
+    );
+  }
+
+  return entries;
+}
+
+export function createDocumentExtractor(): Extractor<ParseContext> {
+  return {
+    kind: MARKDOWN_DOCUMENT_KIND,
+    extract(context: ParseContext): SingleExtractResult {
+      if (context.source.length === 0) {
+        return toResult([]);
+      }
+
+      return toResult([
+        toEntry(
+          MARKDOWN_DOCUMENT_KIND,
+          context.source.split(/\r?\n/u),
+          context.filePath,
+          0,
+        ),
+      ]);
+    },
+  };
+}
+
+export function createHeadingsExtractor(): Extractor<ParseContext> {
+  return {
+    kind: MARKDOWN_HEADINGS_KIND,
+    extract(context: ParseContext): SingleExtractResult {
+      return toResult(
+        createEntriesFromLines(context, MARKDOWN_HEADINGS_KIND, isHeadingLine),
+      );
+    },
+  };
+}
+
+export function createTablesExtractor(): Extractor<ParseContext> {
+  return {
+    kind: MARKDOWN_TABLES_KIND,
+    extract(context: ParseContext): SingleExtractResult {
+      return toResult(createTableEntries(context));
+    },
+  };
+}
+
+function createFrontmatterEntries(context: ParseContext): ExtractEntry[] {
+  const lines = toSourceLines(context.source);
+  if ((lines[0]?.text.trim() ?? "") !== "---") return [];
+  const entries: ExtractEntry[] = [];
+  for (let index = 1; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (!line) break;
+    if (line.text.trim() === "---") break;
+    if (/^\s*[A-Za-z0-9_.-]+\s*:/u.test(line.text)) {
+      entries.push(toEntry(DATA_KEYS_KIND, [line.text.trim()], context.filePath, line.start));
+    }
+  }
+  return entries;
+}
+
+function createMdxImportEntries(context: ParseContext): ExtractEntry[] {
+  return createEntriesFromLines(context, "imports" as ExtractKind, (line) => /^\s*(?:import|export)\s+/u.test(line));
+}
+
+export function createCodeBlocksExtractor(): Extractor<ParseContext> {
+  return {
+    kind: MARKDOWN_CODEBLOCKS_KIND,
+    extract(context: ParseContext): SingleExtractResult {
+      return toResult(createCodeBlockEntries(context));
+    },
+  };
+}
+
+export function createFrontmatterExtractor(): Extractor<ParseContext> {
+  return {
+    kind: DATA_KEYS_KIND,
+    extract(context: ParseContext): SingleExtractResult {
+      return toResult(createFrontmatterEntries(context));
+    },
+  };
+}
+
+export function createMdxImportsExtractor(): Extractor<ParseContext> {
+  return {
+    kind: "imports" as ExtractKind,
+    extract(context: ParseContext): SingleExtractResult {
+      return toResult(createMdxImportEntries(context));
+    },
+  };
+}

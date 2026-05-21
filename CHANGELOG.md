@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.11.0 (2026-05-21)
+
+- **Rename the npm package to `@capyup/capy-tools`.** The GitHub repo and plugin brand were already Capy Tools; the npm install name now matches. Install with `pi install npm:@capyup/capy-tools`. The retired `@capyup/pi-basic-tools` package on npm should be removed from pi after upgrading: `pi remove npm:@capyup/pi-basic-tools`.
+- **Add `showsignature` as a bundled pi tool.** Ported from Fredy Sandoval's ISC-licensed [`showsignature`](https://github.com/FredySandoval/showsignature) v0.1.6 and exposed as a model-callable tool for compact source signatures. Capy Tools keeps the AST-backed TypeScript/JavaScript extraction, adds Rust, Elixir, LaTeX/BibTeX, and broad dependency-free scanner adapters for mainstream languages, plus `.gitignore` traversal, capabilities discovery, and strict-mode diagnostics.
+- **Expand `showsignature` test coverage across all advertised languages.** The suite now includes a language/extension coverage matrix for 25 language adapters, per-kind fixture assertions, compact-output leak guards, comment edge cases, `.gitignore` globstar/negation coverage, numeric option validation, and integration tests.
+
 ## 0.10.0 (2026-05-20)
 
 - **Expand README into a component usage manual.** The README now documents all bundled user commands, shortcuts, model-callable tools, passive UI/runtime components, settings/storage files, RTK environment variables, and example config files so users can understand every internal Capy Tools component from the package docs.

@@ -88,7 +88,7 @@ describe("grouping showcase - harmless combos", () => {
     renderGroupedToolCall("read_block", { path: "extensions/basic-tool-grouping.ts", line: 1 }, theme, ctx("c5"));
 
     renderGroupedToolResult("repo_map", okResult("Root: pi-basic-tools\nFiles: 41", { root: "/Users/lucas/Developer/pi-basic-tools", fileCount: 41 }), { expanded: false, isPartial: false }, theme, ctx("c1"));
-    renderGroupedToolResult("read", okResult('{ "name": "@capyup/pi-basic-tools" }', { lineCount: 1 }), { expanded: false, isPartial: false }, theme, ctx("c2"));
+    renderGroupedToolResult("read", okResult('{ "name": "@capyup/capy-tools" }', { lineCount: 1 }), { expanded: false, isPartial: false }, theme, ctx("c2"));
     renderGroupedToolResult("grep", okResult("tests/ui-tools.test.ts:10\ntests/ui-tools.test.ts:25", { lineCount: 2 }), { expanded: false, isPartial: false }, theme, ctx("c3"));
     renderGroupedToolResult("ls", okResult("basic-tool-grouping.ts\nindex.ts\n...", { lineCount: 14 }), { expanded: false, isPartial: false }, theme, ctx("c4"));
     renderGroupedToolResult("read_block", okResult("import { ... } from ...", { displayPath: "extensions/basic-tool-grouping.ts", outputStart: 1, outputEnd: 20 }), { expanded: false, isPartial: false }, theme, ctx("c5"));

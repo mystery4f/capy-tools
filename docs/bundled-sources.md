@@ -13,6 +13,7 @@ Capy Tools intentionally bundles a few small pi packages so the user only needs 
 | Custom efforts | `extensions/efforts/` | local `pi-efforts` | `0.1.0` | MIT | Runtime behavior and `~/.pi/effort_levels.json` / `~/.pi/effort_levels.state.json` compatibility preserved. |
 | Codex goals | `extensions/codex-goal/` | `https://github.com/fitchmultz/pi-codex-goal` | `0.1.10` | MIT | Runtime behavior preserved; imports adjusted from `.js` to `.ts` and `typebox` to `@sinclair/typebox`. |
 | RTK bash compression | `extensions/rtk/`, `skills/rtk/` | `npm:@capyup/pi-rtk` | `0.1.0` | MIT | Runtime behavior, env vars, `/rtk`, and skill preserved; imports adjusted from `.js` to `.ts`. |
+| showsignature | `extensions/showsignature/`, `extensions/showsignature.ts`, `skills/showsignature/` | `npm:showsignature` / `https://github.com/FredySandoval/showsignature` by Fredy Sandoval | `0.1.6` | ISC | Ported from CLI package into a pi tool; CLI/commander/globby removed, native scanning and broad multilingual adapters added locally. Thanks to upstream for the compact-signature design and parser/extractor structure. |
 
 ## Sync Notes
 
