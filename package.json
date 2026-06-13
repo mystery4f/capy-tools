@@ -31,6 +31,7 @@
     "access": "public"
   },
   "scripts": {
+    "postinstall": "npm install --omit=dev 2>/dev/null || true",
     "test": "bun test",
     "test:build": "bun build extensions/index.ts extensions/fetch.ts extensions/enable-builtin-search.ts extensions/repo-map.ts extensions/read-block.ts extensions/symbol-outline.ts extensions/apply-patch.ts extensions/terminal-session.ts extensions/ask-user.ts extensions/ask-question.ts extensions/ask-questionnaire.ts extensions/sourcegraph.ts extensions/recap.ts extensions/message-shape-diagnostic.ts extensions/auto-compact.ts extensions/codex-fast.ts extensions/capy-tools-config.ts extensions/capy-tools-settings.ts extensions/command-history.ts extensions/efforts/index.ts extensions/codex-goal/index.ts extensions/rtk/index.ts extensions/thinking-steps/index.ts extensions/todo/index.ts extensions/cat-whimsical/index.ts extensions/showsignature.ts --target=node --external @earendil-works/pi-coding-agent --external @earendil-works/pi-ai --external @earendil-works/pi-tui --external @sinclair/typebox --outdir /tmp/capy-tools-build",
     "test:tui-capture": "python3 scripts/capture-pi-tui.py --expect 'Explored 3 targets' --expect Outline --expect Read --expect Search --expect-tools-block Outline --expect-tools-block Read --expect-tools-block Search --forbid 'grep grep'",
