@@ -15,7 +15,7 @@ const HISTORY_DIR = join(homedir(), ".pi", "folder-history");
 const MAX_HISTORY = 500;
 
 function getHistoryFile(cwd: string): string {
-  const name = cwd.replace(/\//g, "-");
+  const name = cwd.replace(/[\/:]/g, "-");
   return join(HISTORY_DIR, `${name}.jsonl`);
 }
 
