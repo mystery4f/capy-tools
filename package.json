@@ -45,6 +45,9 @@
       "./skills"
     ]
   },
+  "dependencies": {
+    "typescript": "^6.0.3"
+  },
   "peerDependencies": {
     "@earendil-works/pi-ai": "*",
     "@earendil-works/pi-coding-agent": "*",
@@ -55,7 +58,6 @@
     "@earendil-works/pi-ai": "^0.74.0",
     "@earendil-works/pi-coding-agent": "^0.74.0",
     "@earendil-works/pi-tui": "^0.74.0",
-    "@sinclair/typebox": "^0.34.49",
-    "typescript": "^6.0.3"
+    "@sinclair/typebox": "^0.34.49"
   }
 }
