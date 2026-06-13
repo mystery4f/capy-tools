@@ -47,10 +47,42 @@ export type CodexFastConfig = {
   enabled: boolean;
 };
 
+export const ALL_TOOL_IDS = [
+  "fetch",
+  "enable-builtin-search",
+  "repo-map",
+  "read-block",
+  "symbol-outline",
+  "apply-patch",
+  "terminal-session",
+  "ask-user",
+  "ask-question",
+  "ask-questionnaire",
+  "sourcegraph",
+  "recap",
+  "message-shape-diagnostic",
+  "auto-compact",
+  "codex-fast",
+  "capy-tools-settings",
+  "command-history",
+  "efforts",
+  "codex-goal",
+  "rtk",
+  "thinking-steps",
+  "todo",
+  "showsignature",
+  "working-message",
+] as const;
+
+export type ToolId = (typeof ALL_TOOL_IDS)[number];
+
+export type ToolsConfig = Record<ToolId, boolean>;
+
 export type CapyToolsSettings = {
   workingMessage: WorkingMessageSettings;
   autoCompact: AutoCompactConfig;
   codexFast: CodexFastConfig;
+  tools: ToolsConfig;
 };
 
 export const DEFAULT_WORKING_MESSAGE_SETTINGS: WorkingMessageSettings = {
@@ -68,10 +100,15 @@ export const DEFAULT_CODEX_FAST_CONFIG: CodexFastConfig = {
   enabled: false,
 };
 
+export const DEFAULT_TOOLS_CONFIG: ToolsConfig = Object.fromEntries(
+  ALL_TOOL_IDS.map((id) => [id, true]),
+) as ToolsConfig;
+
 export const DEFAULT_CAPY_TOOLS_SETTINGS: CapyToolsSettings = {
   workingMessage: DEFAULT_WORKING_MESSAGE_SETTINGS,
   autoCompact: DEFAULT_AUTO_COMPACT_CONFIG,
   codexFast: DEFAULT_CODEX_FAST_CONFIG,
+  tools: { ...DEFAULT_TOOLS_CONFIG },
 };
 
 export const AUTO_COMPACT_PRESETS = [80, 85, 90, 95] as const;
@@ -140,15 +177,29 @@ export function normalizeCodexFastConfig(value: unknown): CodexFastConfig {
   };
 }
 
+export function normalizeToolsConfig(value: unknown): ToolsConfig {
+  const defaults = { ...DEFAULT_TOOLS_CONFIG };
+  if (!value || typeof value !== "object") return defaults;
+
+  const raw = value as Record<string, unknown>;
+  for (const id of ALL_TOOL_IDS) {
+    if (typeof raw[id] === "boolean") {
+      (defaults as Record<string, boolean>)[id] = raw[id] as boolean;
+    }
+  }
+  return defaults;
+}
+
 export function normalizeCapyToolsSettings(value: unknown): CapyToolsSettings {
   if (!value || typeof value !== "object") return structuredClone(DEFAULT_CAPY_TOOLS_SETTINGS);
 
-  const raw = value as { workingMessage?: unknown; autoCompact?: unknown; codexFast?: unknown };
+  const raw = value as { workingMessage?: unknown; autoCompact?: unknown; codexFast?: unknown; tools?: unknown };
   return {
     // Legacy cat-whimsical config stored `language` at the top level.
     workingMessage: normalizeWorkingMessageSettings(raw.workingMessage ?? value),
     autoCompact: normalizeAutoCompactConfig(raw.autoCompact),
     codexFast: normalizeCodexFastConfig(raw.codexFast),
+    tools: normalizeToolsConfig(raw.tools),
   };
 }
 
@@ -170,6 +221,25 @@ async function readJson(path: string): Promise<unknown | undefined> {
 async function writeSettings(settings: CapyToolsSettings): Promise<void> {
   await mkdir(dirname(CAPY_TOOLS_CONFIG_PATH), { recursive: true });
   await writeFile(CAPY_TOOLS_CONFIG_PATH, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+  // Also sync tools config back to settings.json for unified management
+  await syncToolsToPiSettings(settings.tools);
+}
+
+async function syncToolsToPiSettings(tools: ToolsConfig): Promise<void> {
+  try {
+    const raw = await readJson(LEGACY_PI_SETTINGS_PATH);
+    const piSettings: Record<string, unknown> = (raw && typeof raw === "object")
+      ? { ...raw as Record<string, unknown> }
+      : {};
+    piSettings["capyTools"] = {
+      ...((piSettings["capyTools"] as Record<string, unknown>) ?? {}),
+      tools,
+    };
+    await mkdir(dirname(LEGACY_PI_SETTINGS_PATH), { recursive: true });
+    await writeFile(LEGACY_PI_SETTINGS_PATH, `${JSON.stringify(piSettings, null, 2)}\n`, "utf8");
+  } catch {
+    // Non-fatal: tools still saved to capy-tools.json
+  }
 }
 
 export async function restoreCapyToolsSettings(): Promise<CapyToolsSettings> {
@@ -211,6 +281,25 @@ export async function restoreCapyToolsSettings(): Promise<CapyToolsSettings> {
         codexFast: legacyCodexFast,
       };
       shouldWrite = true;
+    }
+  }
+
+  currentSettings = next;
+
+  if (!unifiedObject || unifiedObject.tools === undefined) {
+    const piSettings = await readJson(LEGACY_PI_SETTINGS_PATH);
+    if (piSettings && typeof piSettings === "object") {
+      const capyTools = (piSettings as Record<string, unknown>)["capyTools"];
+      if (capyTools && typeof capyTools === "object") {
+        const toolsFromSettings = (capyTools as Record<string, unknown>)["tools"];
+        if (toolsFromSettings) {
+          next = {
+            ...next,
+            tools: normalizeToolsConfig(toolsFromSettings),
+          };
+          shouldWrite = true;
+        }
+      }
     }
   }
 

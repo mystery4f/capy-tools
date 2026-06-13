@@ -1,6 +1,7 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 
 import {
+  ALL_TOOL_IDS,
   AUTO_COMPACT_PRESETS,
   DEFAULT_AUTO_COMPACT_CONFIG,
   KEEP_RECENT_PRESETS,
@@ -17,12 +18,14 @@ import { formatCodexFastStatus, setCodexFastEnabled } from "./codex-fast.ts";
 
 function formatSettingsSummary(): string {
   const settings = getCapyToolsSettings();
+  const enabledCount = Object.values(settings.tools).filter(Boolean).length;
   return [
     `Working message language: ${loadLanguageLabel(settings.workingMessage.language)}`,
     `Auto-compact threshold: ${settings.autoCompact.autoCompactPercent}%`,
     `Keep recent budget:     ${settings.autoCompact.keepRecentPercent}%`,
     `Strategy:               ${STRATEGY_LABELS[settings.autoCompact.strategy]}`,
     `Codex fast mode:        ${settings.codexFast.enabled ? "enabled" : "disabled"}`,
+    `Tools enabled:          ${enabledCount}/${ALL_TOOL_IDS.length}`,
   ].join("\n");
 }
 
@@ -38,6 +41,36 @@ async function setWorkingMessageLanguage(ctx: ExtensionContext, languageText: st
   return true;
 }
 
+async function openToolsMenu(ctx: ExtensionContext): Promise<void> {
+  while (true) {
+    const settings = getCapyToolsSettings();
+    const lines: string[] = [];
+    for (const id of ALL_TOOL_IDS) {
+      const icon = settings.tools[id] ? "✅" : "❌";
+      lines.push(`${icon} ${id}`);
+    }
+
+    const choice = await ctx.ui.select(
+      `Tools\n\n${lines.join("\n")}\n\nSelect a tool to toggle, or Done.`,
+      [...ALL_TOOL_IDS.map((id) => `${settings.tools[id] ? "Disable" : "Enable"} ${id}`), "Done"],
+    );
+
+    if (!choice || choice === "Done") return;
+
+    const match = choice.match(/^(Enable|Disable) (.+)$/);
+    if (!match) continue;
+
+    const toolId = match[2];
+    const enable = match[1] === "Enable";
+
+    await updateCapyToolsSettings((s) => ({
+      ...s,
+      tools: { ...s.tools, [toolId]: enable },
+    }));
+    ctx.ui.notify(`Tool "${toolId}" ${enable ? "enabled" : "disabled"}. Restart pi or /reload for changes.`, "info");
+  }
+}
+
 async function openSettingsMenu(ctx: ExtensionContext): Promise<void> {
   await restoreCapyToolsSettings();
 
@@ -51,6 +84,7 @@ async function openSettingsMenu(ctx: ExtensionContext): Promise<void> {
         `Keep recent budget [${settings.autoCompact.keepRecentPercent}%]`,
         `Compaction strategy [${settings.autoCompact.strategy}]`,
         `Codex fast mode [${settings.codexFast.enabled ? "enabled" : "disabled"}]`,
+        "Tools (enable/disable individual tools)",
         "Auto-compact status",
         "Codex fast status",
         "Reset auto-compact defaults",
@@ -123,6 +157,11 @@ async function openSettingsMenu(ctx: ExtensionContext): Promise<void> {
       continue;
     }
 
+    if (choice.startsWith("Tools")) {
+      await openToolsMenu(ctx);
+      continue;
+    }
+
     if (choice === "Auto-compact status") {
       ctx.ui.notify(formatAutoCompactStatus(ctx), "info");
       continue;
@@ -158,6 +197,8 @@ export default function capyToolsSettingsExtension(pi: ExtensionAPI): void {
         "codex-fast off",
         "codex-fast toggle",
         "codex-fast status",
+        "tools",
+        ...ALL_TOOL_IDS.flatMap((id) => [`enable ${id}`, `disable ${id}`]),
         "en",
         "zh",
         "ja",
@@ -203,6 +244,35 @@ export default function capyToolsSettingsExtension(pi: ExtensionAPI): void {
         return;
       }
 
+      if (trimmed === "tools") {
+        await openToolsMenu(ctx);
+        return;
+      }
+
+      const enableMatch = trimmed.match(/^enable (.+)$/i);
+      if (enableMatch) {
+        const toolId = enableMatch[1].trim();
+        if (!ALL_TOOL_IDS.includes(toolId as typeof ALL_TOOL_IDS[number])) {
+          ctx.ui.notify(`Unknown tool: ${toolId}`, "warning");
+          return;
+        }
+        await updateCapyToolsSettings((s) => ({ ...s, tools: { ...s.tools, [toolId]: true } }));
+        ctx.ui.notify(`Tool "${toolId}" enabled. Restart pi or /reload for changes.`, "info");
+        return;
+      }
+
+      const disableMatch = trimmed.match(/^disable (.+)$/i);
+      if (disableMatch) {
+        const toolId = disableMatch[1].trim();
+        if (!ALL_TOOL_IDS.includes(toolId as typeof ALL_TOOL_IDS[number])) {
+          ctx.ui.notify(`Unknown tool: ${toolId}`, "warning");
+          return;
+        }
+        await updateCapyToolsSettings((s) => ({ ...s, tools: { ...s.tools, [toolId]: false } }));
+        ctx.ui.notify(`Tool "${toolId}" disabled. Restart pi or /reload for changes.`, "info");
+        return;
+      }
+
       if (trimmed === "reset-auto-compact" || trimmed === "auto-compact reset") {
         await persistAutoCompactConfig({ ...DEFAULT_AUTO_COMPACT_CONFIG });
         ctx.ui.notify("Auto-compact settings reset to defaults.", "info");
@@ -212,7 +282,7 @@ export default function capyToolsSettingsExtension(pi: ExtensionAPI): void {
       if (await setWorkingMessageLanguage(ctx, trimmed)) return;
 
       ctx.ui.notify(
-        "Usage: /capy-tools-settings [settings|status|reset-auto-compact|codex-fast on|codex-fast off|en|zh|ja|ko]",
+        "Usage: /capy-tools-settings [settings|status|tools|enable <tool>|disable <tool>|codex-fast on|off|en|zh|ja|ko]",
         "warning",
       );
     },
