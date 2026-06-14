@@ -442,7 +442,6 @@ export default function applyPatchExtension(pi: ExtensionAPI): void {
     promptSnippet: "Apply patches across multiple files with add/update/delete/move in one call",
     promptGuidelines: [
       "Use apply_patch when a change spans multiple files — all hunks apply in one tool call instead of N separate edits.",
-      "For single-file edits, the patch tool with old_str/new_str is usually simpler; apply_patch shines for cross-file changes.",
       "Patch text must start with *** Begin Patch and end with *** End Patch.",
       "This tool can write absolute paths and delete or move files; inspect paths carefully before using it.",
       "This tool is a direct extension-process filesystem writer, not the built-in bash approval flow.",
